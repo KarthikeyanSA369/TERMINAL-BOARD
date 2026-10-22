@@ -10,6 +10,7 @@ import sys
 import json
 import logging
 import threading
+import time
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 from flask import Flask, jsonify, request, send_from_directory, Response
@@ -63,6 +64,33 @@ from backend.core.license_expiry import (
 )
 from backend.core.diagnostics import run_all_diagnostics, execute_safe_action
 from backend.core.alerts import pop_pending_toasts, evaluate_license_and_driver_alerts
+
+# Hardware Diagnostics & Health Assessment Engine
+from backend.core.hardware_inventory import get_complete_hardware_inventory
+from backend.core.hardware_diagnostics import (
+    run_hardware_assessment, run_cpu_instruction_test, run_ram_heap_integrity_test,
+    run_storage_read_latency_test, run_network_loopback_test, collect_hardware_error_events
+)
+from backend.core.fault_correlation import correlate_faults
+from backend.core.hardware_report import (
+    build_full_report_model, export_report_json, export_report_txt, export_report_html,
+    get_default_reports_dir
+)
+
+# Active Hardware Scan State
+_hw_scan_state: Dict[str, Any] = {
+    "is_running": False,
+    "scan_type": "fast",
+    "progress_percent": 0,
+    "current_stage": "Idle",
+    "current_test": "None",
+    "start_time": None,
+    "elapsed_ms": 0.0,
+    "latest_report": None,
+    "cancel_requested": False,
+    "error": None
+}
+_hw_scan_lock = threading.Lock()
 
 # Terminal Board Core Capabilities
 from backend.core.file_search import (
@@ -781,6 +809,169 @@ class SYSFIXApi:
         """Configure or revert user sign-in launch in Windows Registry."""
         return set_startup_status(enabled)
 
+    # =========================================================================
+    # Hardware Diagnostics & Health Assessment Engine APIs
+    # =========================================================================
+
+    def start_hardware_scan(self, scan_type: str = "fast") -> Dict[str, Any]:
+        """Initiates background hardware assessment without blocking UI."""
+        global _hw_scan_state
+        with _hw_scan_lock:
+            if _hw_scan_state["is_running"]:
+                return {
+                    "success": False,
+                    "message": "A hardware diagnostic scan is already in progress.",
+                    "progress": self.get_hardware_scan_progress()
+                }
+
+            _hw_scan_state["is_running"] = True
+            _hw_scan_state["scan_type"] = scan_type
+            _hw_scan_state["progress_percent"] = 0
+            _hw_scan_state["current_stage"] = "Initializing"
+            _hw_scan_state["current_test"] = "Preparing system queries"
+            _hw_scan_state["start_time"] = time.time()
+            _hw_scan_state["cancel_requested"] = False
+            _hw_scan_state["error"] = None
+
+        def _scan_worker():
+            global _hw_scan_state
+            try:
+                def _prog(pct, stage, test):
+                    with _hw_scan_lock:
+                        _hw_scan_state["progress_percent"] = pct
+                        _hw_scan_state["current_stage"] = stage
+                        _hw_scan_state["current_test"] = test
+                        if _hw_scan_state["start_time"]:
+                            _hw_scan_state["elapsed_ms"] = round((time.time() - _hw_scan_state["start_time"]) * 1000.0, 1)
+
+                assess_res = run_hardware_assessment(scan_type=scan_type, progress_callback=_prog)
+
+                if _hw_scan_state.get("cancel_requested"):
+                    with _hw_scan_lock:
+                        _hw_scan_state["is_running"] = False
+                        _hw_scan_state["current_stage"] = "Cancelled"
+                        _hw_scan_state["current_test"] = "Scan aborted by user"
+                    return
+
+                drivers = get_complete_driver_inventory()
+                findings = correlate_faults(assess_res["inventory"], assess_res["error_events"], assess_res["diagnostic_tests"], drivers)
+                report_model = build_full_report_model(assess_res, findings)
+
+                try:
+                    export_report_json(report_model)
+                    export_report_html(report_model)
+                except Exception as e:
+                    logger.warning(f"Auto-export warning: {e}")
+
+                with _hw_scan_lock:
+                    _hw_scan_state["latest_report"] = report_model
+                    _hw_scan_state["progress_percent"] = 100
+                    _hw_scan_state["current_stage"] = "Complete"
+                    _hw_scan_state["current_test"] = f"Finished in {assess_res['scan_duration_ms']} ms"
+                    _hw_scan_state["is_running"] = False
+
+            except Exception as e:
+                logger.error(f"Hardware scan worker error: {e}")
+                with _hw_scan_lock:
+                    _hw_scan_state["is_running"] = False
+                    _hw_scan_state["error"] = str(e)
+                    _hw_scan_state["current_stage"] = "Error"
+                    _hw_scan_state["current_test"] = str(e)
+
+        worker = threading.Thread(target=_scan_worker, daemon=True, name="SYSFIX-HwScanWorker")
+        worker.start()
+
+        return {
+            "success": True,
+            "message": f"Started {scan_type.upper()} hardware diagnostic scan.",
+            "scan_type": scan_type
+        }
+
+    def get_hardware_scan_progress(self) -> Dict[str, Any]:
+        """Provides current progress of running hardware scan."""
+        global _hw_scan_state
+        with _hw_scan_lock:
+            state = dict(_hw_scan_state)
+            if state["is_running"] and state["start_time"]:
+                state["elapsed_ms"] = round((time.time() - state["start_time"]) * 1000.0, 1)
+            has_report = state["latest_report"] is not None
+            state["has_report"] = has_report
+            if not state["is_running"] and has_report:
+                rep = state["latest_report"]
+                state["report_summary"] = {
+                    "overall_status": rep.get("report_metadata", {}).get("overall_status"),
+                    "generated_at": rep.get("report_metadata", {}).get("generated_at"),
+                    "executive_summary": rep.get("section_1_executive_summary", {})
+                }
+            state.pop("latest_report", None)
+            return state
+
+    def cancel_hardware_scan(self) -> Dict[str, Any]:
+        """Requests cancellation of running hardware scan."""
+        global _hw_scan_state
+        with _hw_scan_lock:
+            if not _hw_scan_state["is_running"]:
+                return {"success": False, "message": "No hardware scan is currently running."}
+            _hw_scan_state["cancel_requested"] = True
+            _hw_scan_state["is_running"] = False
+            _hw_scan_state["current_stage"] = "Cancelled"
+            _hw_scan_state["current_test"] = "Scan aborted by user"
+            return {"success": True, "message": "Hardware scan cancelled."}
+
+    def get_latest_hardware_report(self) -> Dict[str, Any]:
+        """Returns the complete compiled hardware diagnostic report."""
+        global _hw_scan_state
+        with _hw_scan_lock:
+            if _hw_scan_state["latest_report"]:
+                return _hw_scan_state["latest_report"]
+
+        assess_res = run_hardware_assessment(scan_type="fast")
+        findings = correlate_faults(assess_res["inventory"], assess_res["error_events"], assess_res["diagnostic_tests"])
+        report = build_full_report_model(assess_res, findings)
+        with _hw_scan_lock:
+            _hw_scan_state["latest_report"] = report
+        return report
+
+    def export_hardware_report(self, format_type: str = "html") -> Dict[str, Any]:
+        """Exports the latest hardware report to requested format (html, json, txt)."""
+        report = self.get_latest_hardware_report()
+        fmt = (format_type or "html").lower().strip()
+
+        if fmt == "json":
+            out_p = export_report_json(report)
+        elif fmt == "txt":
+            out_p = export_report_txt(report)
+        else:
+            out_p = export_report_html(report)
+
+        return {
+            "success": True,
+            "format": fmt,
+            "file_path": out_p,
+            "file_name": os.path.basename(out_p),
+            "file_size_bytes": os.path.getsize(out_p) if os.path.isfile(out_p) else 0,
+            "message": f"Successfully exported hardware diagnostic report to {os.path.basename(out_p)}"
+        }
+
+    def get_hardware_compatibility_matrix(self) -> List[Dict[str, Any]]:
+        """Returns the normal Windows vs WinPE vs Admin privilege matrix."""
+        return [
+            {"category": "CPU / Processor", "check_item": "Model, architecture, cores & utilization", "normal_windows": "Fully Supported (Win32_Processor & psutil)", "admin_required": "No", "winpe_status": "Fully Supported (Kernel32 & basic WMI)", "service_dependencies": "None", "notes": "Logical core metrics and architecture queryable across all environments."},
+            {"category": "CPU / Processor", "check_item": "ACPI Thermal Zone Temperature & Throttling", "normal_windows": "Supported with Admin / OEM driver", "admin_required": "Yes", "winpe_status": "Limited (Depends on WinPE vendor driver injection)", "service_dependencies": "ACPI / winmgmt service", "notes": "Restricted in standard user sessions to prevent hardware side-channel probing."},
+            {"category": "RAM / Memory", "check_item": "Physical capacity, available RAM, swap usage", "normal_windows": "Fully Supported (GlobalMemoryStatusEx)", "admin_required": "No", "winpe_status": "Fully Supported (RAM disk memory mapped)", "service_dependencies": "None", "notes": "Operates without dependencies in pre-boot environments."},
+            {"category": "RAM / Memory", "check_item": "Installed DIMM modules, speed, manufacturer & slots", "normal_windows": "Fully Supported (Win32_PhysicalMemory)", "admin_required": "No", "winpe_status": "Supported with WinPE-WMI package", "service_dependencies": "winmgmt service", "notes": "Requires SMBIOS table access exposed through WMI."},
+            {"category": "RAM / Memory", "check_item": "User-space Heap Bit-Pattern Integrity Test", "normal_windows": "Fully Supported (Safe user heap verification)", "admin_required": "No", "winpe_status": "Fully Supported", "service_dependencies": "None", "notes": "Non-destructive memory verification test."},
+            {"category": "Storage / Disks", "check_item": "Physical disk detection & bus type (NVMe, SATA, SSD, HDD)", "normal_windows": "Fully Supported (MSFT_PhysicalDisk / Win32_DiskDrive)", "admin_required": "No", "winpe_status": "Supported (WinPE-StorageWMI or diskpart)", "service_dependencies": "Storage management service", "notes": "Distinguishes SSD vs HDD vs NVMe interfaces."},
+            {"category": "Storage / Disks", "check_item": "SMART Reliability Counters & Temperature", "normal_windows": "Supported with Admin (MSFT_StorageReliabilityCounter)", "admin_required": "Yes", "winpe_status": "Supported with WinPE-StorageWMI package", "service_dependencies": "Storage WMI provider", "notes": "Elevated token required for IOCTL storage pass-through."},
+            {"category": "Storage / Disks", "check_item": "Read Latency Sampling Test", "normal_windows": "Fully Supported (Non-destructive read probes)", "admin_required": "No", "winpe_status": "Fully Supported on mounted volumes", "service_dependencies": "None", "notes": "Zero write operations; safe on all storage media."},
+            {"category": "GPU / Graphics", "check_item": "Video controller model, VRAM & driver version", "normal_windows": "Fully Supported (Win32_VideoController)", "admin_required": "No", "winpe_status": "Limited (Basic Display Adapter in default WinPE)", "service_dependencies": "Display driver / WMI", "notes": "WinPE uses Microsoft Basic Display Driver unless vendor drivers injected."},
+            {"category": "Motherboard & BIOS", "check_item": "BaseBoard product, serial, BIOS vendor & release date", "normal_windows": "Fully Supported (Win32_BaseBoard / Win32_BIOS)", "admin_required": "No", "winpe_status": "Supported with WinPE-WMI package", "service_dependencies": "winmgmt service", "notes": "Direct reading of SMBIOS tables."},
+            {"category": "Cooling System", "check_item": "Fan tachometer RPM & cooling sensor status", "normal_windows": "Requires OEM EC driver (e.g. HP CoolSense / ASUS Armoury)", "admin_required": "Yes (OEM specific)", "winpe_status": "Not Available (Generic ACPI only)", "service_dependencies": "OEM vendor service", "notes": "Standard ACPI does not expose fan RPM without vendor drivers."},
+            {"category": "Battery Health", "check_item": "Design capacity, full charge capacity & wear calculation", "normal_windows": "Fully Supported (root\\wmi BatteryStaticData)", "admin_required": "No", "winpe_status": "Supported if ACPI battery driver initialized", "service_dependencies": "ACPI battery control method driver", "notes": "Desktop systems cleanly identified with AC power fallback."},
+            {"category": "Network Devices", "check_item": "Physical adapters, MAC address & link speed", "normal_windows": "Fully Supported (Win32_NetworkAdapter & psutil)", "admin_required": "No", "winpe_status": "Supported after wpeinit executes", "service_dependencies": "TCP/IP stack & NDIS driver", "notes": "WinPE requires compatible NIC drivers injected."},
+            {"category": "Offline Logs & Crash Dumps", "check_item": "BSOD Minidumps & offline Windows event logs", "normal_windows": "Fully Supported (C:\\Windows\\Minidump)", "admin_required": "Admin recommended for Minidump", "winpe_status": "Fully Supported across offline mounted drives", "service_dependencies": "None (filesystem read access)", "notes": "Primary disaster triage feature for unbootable systems."}
+        ]
+
 # Flask Server factory for HTTP access
 
 def create_flask_app(frontend_dir: Optional[str] = None) -> Flask:
@@ -1041,6 +1232,33 @@ def create_flask_app(frontend_dir: Optional[str] = None) -> Flask:
         payload = request.get_json(silent=True) or {}
         enabled = bool(payload.get("enabled", False))
         return jsonify(api.set_windows_startup_status(enabled))
+
+    # Hardware Diagnostics & Health Assessment Routes
+    @app.route("/api/hardware/scan", methods=["POST"])
+    def route_hardware_scan():
+        payload = request.get_json(silent=True) or {}
+        scan_type = payload.get("scan_type", "fast")
+        return jsonify(api.start_hardware_scan(scan_type=scan_type))
+
+    @app.route("/api/hardware/progress", methods=["GET"])
+    def route_hardware_progress():
+        return jsonify(api.get_hardware_scan_progress())
+
+    @app.route("/api/hardware/cancel", methods=["POST"])
+    def route_hardware_cancel():
+        return jsonify(api.cancel_hardware_scan())
+
+    @app.route("/api/hardware/report", methods=["GET"])
+    def route_hardware_report():
+        return jsonify(api.get_latest_hardware_report())
+
+    @app.route("/api/hardware/export/<format_type>", methods=["GET", "POST"])
+    def route_hardware_export(format_type):
+        return jsonify(api.export_hardware_report(format_type=format_type))
+
+    @app.route("/api/hardware/compatibility", methods=["GET"])
+    def route_hardware_compatibility():
+        return jsonify(api.get_hardware_compatibility_matrix())
 
     return app
 

@@ -101,6 +101,13 @@
           <span>Diagnostics</span>
         </a>
 
+        <a class="nav-item" data-page="hardware_diagnostics">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg>
+          </span>
+          <span>Hardware Engine</span>
+        </a>
+
         <a class="nav-item" data-page="settings">
           <span class="nav-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
@@ -774,6 +781,108 @@
           </div>
         </section>
 
+        <!-- 9B. HARDWARE DIAGNOSTICS & HEALTH ASSESSMENT VIEW -->
+        <section id="page-hardware_diagnostics" class="page-view">
+          <div class="card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; border-left: 4px solid var(--accent-primary);">
+            <div>
+              <h3 class="card-title" style="margin: 0;">Hardware Discovery, Diagnostics & Health Assessment</h3>
+              <p style="font-size: 12px; color: var(--text-secondary); margin: 4px 0 0 0;">
+                Comprehensive physical inventory across 9 subsystems with active diagnostic testing and rule-based fault correlation.
+              </p>
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+              <button id="hw-btn-fast" class="btn btn-primary" onclick="startHardwareScan('fast')">Scan All Hardware (Fast)</button>
+              <button id="hw-btn-detailed" class="btn" onclick="startHardwareScan('detailed')">Detailed Diagnostic Scan</button>
+              <button id="hw-btn-cancel" class="btn btn-danger" onclick="cancelHardwareScan()" style="display: none;">Cancel Scan</button>
+              
+              <div class="dropdown" style="display: inline-block; position: relative;">
+                <button class="btn" onclick="toggleHwExportDropdown()">Export Report ▾</button>
+                <div id="hw-export-dropdown" class="dropdown-menu" style="display: none; position: absolute; right: 0; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); z-index: 50; min-width: 140px; padding: 6px 0;">
+                  <a href="javascript:void(0)" onclick="exportHardwareReport('html')" style="display: block; padding: 8px 14px; color: var(--text-primary); text-decoration: none; font-size: 12px;">Export HTML Report</a>
+                  <a href="javascript:void(0)" onclick="exportHardwareReport('json')" style="display: block; padding: 8px 14px; color: var(--text-primary); text-decoration: none; font-size: 12px;">Export JSON Report</a>
+                  <a href="javascript:void(0)" onclick="exportHardwareReport('txt')" style="display: block; padding: 8px 14px; color: var(--text-primary); text-decoration: none; font-size: 12px;">Export Plain Text</a>
+                </div>
+              </div>
+
+              <button class="btn btn-secondary" onclick="openCompatibilityMatrixModal()">WinPE Compatibility Matrix</button>
+            </div>
+          </div>
+
+          <!-- Live Scan Progress Card -->
+          <div id="hw-progress-card" class="card" style="display: none; border-left: 4px solid var(--accent-primary); background: var(--bg-surface);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span id="hw-progress-stage" style="font-size: 13px; font-weight: 700; color: var(--accent-primary);">Scanning Hardware Subsystems...</span>
+              <span id="hw-progress-pct" style="font-size: 13px; font-weight: 700; color: var(--text-primary);">0%</span>
+            </div>
+            <div style="width: 100%; height: 8px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden; margin-bottom: 8px;">
+              <div id="hw-progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #7C83FF, #45D6A3); transition: width 0.3s ease;"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted);">
+              <span id="hw-progress-test">Active Probe: Preparing system queries</span>
+              <span id="hw-progress-time">Elapsed: 0 ms</span>
+            </div>
+          </div>
+
+          <!-- Summary Stats Grid -->
+          <div id="hw-summary-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px;">
+            <div class="card" style="text-align: center; padding: 14px;">
+              <div id="hw-stat-total" style="font-size: 24px; font-weight: 700; color: var(--accent-primary);">--</div>
+              <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; margin-top: 4px;">Subsystems Evaluated</div>
+            </div>
+            <div class="card" style="text-align: center; padding: 14px;">
+              <div id="hw-stat-passed" style="font-size: 24px; font-weight: 700; color: var(--status-healthy);">--</div>
+              <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; margin-top: 4px;">Passed (Healthy)</div>
+            </div>
+            <div class="card" style="text-align: center; padding: 14px;">
+              <div id="hw-stat-warnings" style="font-size: 24px; font-weight: 700; color: var(--status-warning);">--</div>
+              <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; margin-top: 4px;">Warnings</div>
+            </div>
+            <div class="card" style="text-align: center; padding: 14px;">
+              <div id="hw-stat-critical" style="font-size: 24px; font-weight: 700; color: var(--status-critical);">--</div>
+              <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; margin-top: 4px;">Critical Issues</div>
+            </div>
+          </div>
+
+          <!-- Rule-Based Fault Findings Section -->
+          <div class="card" style="display: flex; flex-direction: column; gap: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px;">
+              <h3 class="card-title" style="margin: 0;">Rule-Based Fault Correlation Findings</h3>
+              <span id="hw-findings-badge" class="badge badge-healthy">0 Anomalies</span>
+            </div>
+            <div id="hw-findings-container">
+              <div style="font-size: 12px; color: var(--text-muted); padding: 8px 0;">No fault findings generated. Run a hardware scan to evaluate system signals.</div>
+            </div>
+          </div>
+
+          <!-- Component Cards Section -->
+          <div class="card" style="display: flex; flex-direction: column; gap: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px;">
+              <h3 class="card-title" style="margin: 0;">Physical Hardware Subsystems (9 Categories)</h3>
+              <span id="hw-overall-badge" class="badge badge-healthy">HEALTHY</span>
+            </div>
+            <div id="hw-components-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px;">
+              <!-- Dynamically Populated by renderHardwareDiagnostics() -->
+            </div>
+          </div>
+
+          <!-- Diagnostic Stress Tests & Events Drawer -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <div class="card" style="display: flex; flex-direction: column; gap: 10px;">
+              <h3 class="card-title" style="margin: 0; font-size: 14px;">Active Diagnostic Test Results</h3>
+              <div id="hw-tests-container" style="font-size: 12px; color: var(--text-secondary);">
+                <!-- Populated dynamically -->
+              </div>
+            </div>
+            <div class="card" style="display: flex; flex-direction: column; gap: 10px;">
+              <h3 class="card-title" style="margin: 0; font-size: 14px;">Recent Hardware Error Events (Past 72h)</h3>
+              <div id="hw-events-container" style="font-size: 12px; color: var(--text-secondary); max-height: 180px; overflow-y: auto;">
+                <!-- Populated dynamically -->
+              </div>
+            </div>
+          </div>
+
+        </section>
+
         <!-- 10. SETTINGS VIEW -->
         <section id="page-settings" class="page-view">
           <div class="card settings-card" style="display: flex; flex-direction: column; gap: 18px;">
@@ -1371,6 +1480,44 @@
           <button class="btn" onclick="closeEmailPreviewModal()">Close Preview</button>
           <button class="btn btn-primary" onclick="sendDailyReportNow()">Send Report Now</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8. WinPE & Recovery Environment Compatibility Matrix Modal -->
+  <div id="compatibility-matrix-modal" class="modal-overlay">
+    <div class="modal-box" style="max-width: 900px; width: 94vw; max-height: 85vh; display: flex; flex-direction: column;">
+      <div class="modal-header">
+        <div>
+          <h3 style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0;">
+            SYSFIX Environment Compatibility & Privilege Matrix
+          </h3>
+          <p style="font-size: 12px; color: var(--text-secondary); margin: 2px 0 0 0;">
+            Detailed operational boundaries: Normal Windows vs. WinPE Pre-Boot vs. Administrator Elevation
+          </p>
+        </div>
+        <button class="icon-btn" onclick="closeCompatibilityMatrixModal()" style="width: 28px; height: 28px;">✕</button>
+      </div>
+
+      <div class="modal-body" style="flex: 1; overflow-y: auto; padding: 16px;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+          <thead>
+            <tr style="background: var(--bg-surface-alt); text-align: left;">
+              <th style="padding: 8px 10px; color: var(--text-secondary); text-transform: uppercase; font-size: 11px;">Subsystem</th>
+              <th style="padding: 8px 10px; color: var(--text-secondary); text-transform: uppercase; font-size: 11px;">Diagnostic Operation</th>
+              <th style="padding: 8px 10px; color: var(--text-secondary); text-transform: uppercase; font-size: 11px;">Normal Windows</th>
+              <th style="padding: 8px 10px; color: var(--text-secondary); text-transform: uppercase; font-size: 11px;">Admin Req.</th>
+              <th style="padding: 8px 10px; color: var(--text-secondary); text-transform: uppercase; font-size: 11px;">WinPE Support</th>
+            </tr>
+          </thead>
+          <tbody id="compatibility-matrix-tbody">
+            <!-- Populated dynamically via renderCompatibilityMatrix() -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="modal-footer" style="display: flex; justify-content: flex-end;">
+        <button class="btn" onclick="closeCompatibilityMatrixModal()">Close Matrix</button>
       </div>
     </div>
   </div>

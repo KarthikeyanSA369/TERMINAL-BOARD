@@ -101,7 +101,13 @@ const api = {
       get_email_queue: "/api/email/queue",
       retry_queued_email: (id) => `/api/email/queue/${id}/retry`,
       get_startup_status: "/api/startup/status",
-      toggle_startup_status: "/api/startup/toggle"
+      toggle_startup_status: "/api/startup/toggle",
+      start_hardware_scan: "/api/hardware/scan",
+      get_hardware_scan_progress: "/api/hardware/progress",
+      cancel_hardware_scan: "/api/hardware/cancel",
+      get_latest_hardware_report: "/api/hardware/report",
+      export_hardware_report: (fmt) => `/api/hardware/export/${fmt || 'html'}`,
+      get_hardware_compatibility_matrix: "/api/hardware/compatibility"
     };
 
     const url = endpointMap[method];
@@ -150,6 +156,20 @@ const api = {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(args[0])
       });
+      return await res.json();
+    }
+
+    if (method === "start_hardware_scan") {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scan_type: args[0] || "fast" })
+      });
+      return await res.json();
+    }
+
+    if (method === "cancel_hardware_scan") {
+      const res = await fetch(url, { method: "POST" });
       return await res.json();
     }
 
@@ -413,6 +433,7 @@ function navigate(pageId) {
     license_audit: "Software License Audit & Verification",
     alerts_history: "System Alerts & Anomaly History",
     diagnostics: "Diagnostics & Safe Fixes",
+    hardware_diagnostics: "Hardware Discovery, Diagnostics & Health Assessment",
     settings: "Monitoring Preferences & Thresholds"
   };
   const subtitles = {
@@ -425,6 +446,7 @@ function navigate(pageId) {
     license_audit: "Declared licenses, package manifests, and compliance verification",
     alerts_history: "Configurable threshold alerts, suppression, and recovery log",
     diagnostics: "Evidence-based problem diagnosis and user-confirmed safe repairs",
+    hardware_diagnostics: "Physical discovery across 9 subsystems, active diagnostic tests, and rule-based fault correlation",
     settings: "Intervals, alert limits, data retention, and notifications"
   };
 
@@ -465,6 +487,9 @@ async function refreshActivePage() {
         break;
       case "diagnostics":
         await renderDiagnostics();
+        break;
+      case "hardware_diagnostics":
+        await renderHardwareDiagnostics();
         break;
       case "settings":
         await renderSettings();
@@ -2231,5 +2256,336 @@ function togglePasswordVisibility(elemId) {
   const el = document.getElementById(elemId);
   if (!el) return;
   el.type = el.type === "password" ? "text" : "password";
+}
+
+// =========================================================================
+// HARDWARE DIAGNOSTICS & HEALTH ASSESSMENT FRONTEND ENGINE
+// =========================================================================
+
+let hwPollTimer = null;
+
+async function renderHardwareDiagnostics() {
+  try {
+    const progress = await api.call("get_hardware_scan_progress");
+    if (progress && progress.is_running) {
+      const progressCard = document.getElementById("hw-progress-card");
+      if (progressCard) progressCard.style.display = "block";
+      startHwProgressPolling();
+      return;
+    }
+
+    const report = await api.call("get_latest_hardware_report");
+    if (!report) return;
+
+    renderHardwareReportData(report);
+  } catch (err) {
+    console.error("renderHardwareDiagnostics error:", err);
+  }
+}
+
+function renderHardwareReportData(report) {
+  const meta = report.report_metadata || {};
+  const exec = report.section_1_executive_summary || {};
+  const findings = report.section_15_rule_based_fault_correlation || [];
+  const tests = report.section_14_diagnostic_test_results || {};
+  const events = report.section_13_hardware_error_events?.recent_events || [];
+
+  const totalEl = document.getElementById("hw-stat-total");
+  const passedEl = document.getElementById("hw-stat-passed");
+  const warnEl = document.getElementById("hw-stat-warnings");
+  const critEl = document.getElementById("hw-stat-critical");
+  if (totalEl) totalEl.textContent = exec.total_components_inspected ?? 9;
+  if (passedEl) passedEl.textContent = exec.passed_healthy ?? 9;
+  if (warnEl) warnEl.textContent = exec.warnings_detected ?? 0;
+  if (critEl) critEl.textContent = exec.critical_failures ?? 0;
+
+  const overallBadge = document.getElementById("hw-overall-badge");
+  if (overallBadge) {
+    const stat = meta.overall_status || "HEALTHY";
+    overallBadge.textContent = stat;
+    overallBadge.className = `badge ${stat === "CRITICAL" ? "badge-critical" : (stat === "WARNING" ? "badge-warning" : "badge-healthy")}`;
+  }
+
+  const findBadge = document.getElementById("hw-findings-badge");
+  if (findBadge) {
+    findBadge.textContent = `${findings.length} ${findings.length === 1 ? 'Anomaly' : 'Anomalies'}`;
+    findBadge.className = `badge ${findings.length > 0 ? (findings.some(f => f.severity === 'CRITICAL') ? 'badge-critical' : 'badge-warning') : 'badge-healthy'}`;
+  }
+
+  const findingsContainer = document.getElementById("hw-findings-container");
+  if (findingsContainer) {
+    if (findings.length === 0) {
+      findingsContainer.innerHTML = `
+        <div style="background: rgba(69, 214, 163, 0.08); border-left: 4px solid var(--status-healthy); padding: 12px 14px; border-radius: 6px; color: var(--status-healthy); font-size: 13px;">
+          <strong>Zero Hardware Anomalies:</strong> All rule-based correlation tests passed normally. Processor, memory, storage, cooling, battery, and network are operating within verified physical parameters.
+        </div>
+      `;
+    } else {
+      findingsContainer.innerHTML = findings.map(f => {
+        const sevClass = f.severity === "CRITICAL" ? "badge-critical" : (f.severity === "WARNING" ? "badge-warning" : "badge-healthy");
+        const borderCol = f.severity === "CRITICAL" ? "var(--status-critical)" : (f.severity === "WARNING" ? "var(--status-warning)" : "var(--accent-primary)");
+        return `
+          <div style="background: var(--bg-surface); border-radius: 8px; border-left: 4px solid ${borderCol}; padding: 14px; margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span class="badge ${sevClass}">${escapeHtml(f.finding_id)} • ${escapeHtml(f.severity)}</span>
+              <span style="font-size: 11px; color: var(--text-muted);">Confidence: <strong>${escapeHtml(f.confidence_level)}</strong></span>
+            </div>
+            <h4 style="margin: 8px 0 4px 0; color: var(--text-primary); font-size: 14px;">${escapeHtml(f.title)}</h4>
+            <p style="font-size: 12px; color: var(--text-secondary); margin: 0 0 8px 0;">${escapeHtml(f.summary)}</p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px;">
+              <div>
+                <strong style="font-size: 11px; color: var(--accent-primary); text-transform: uppercase;">Supporting Evidence:</strong>
+                <ul style="font-size: 11px; color: var(--text-secondary); margin: 4px 0 0 16px; padding: 0;">
+                  ${(f.supporting_evidence || []).map(e => `<li>${escapeHtml(e)}</li>`).join("")}
+                </ul>
+              </div>
+              <div>
+                <strong style="font-size: 11px; color: var(--status-warning); text-transform: uppercase;">Possible Causes:</strong>
+                <ul style="font-size: 11px; color: var(--text-secondary); margin: 4px 0 0 16px; padding: 0;">
+                  ${(f.possible_causes || []).map(c => `<li>${escapeHtml(c)}</li>`).join("")}
+                </ul>
+              </div>
+            </div>
+            <div style="background: rgba(124, 131, 255, 0.08); padding: 8px 12px; border-radius: 6px; margin-top: 8px;">
+              <strong style="font-size: 11px; color: var(--accent-primary); text-transform: uppercase;">Recommended Steps:</strong>
+              <ul style="font-size: 11px; color: var(--text-primary); margin: 4px 0 0 16px; padding: 0;">
+                ${(f.recommended_actions || []).map(a => `<li>${escapeHtml(a)}</li>`).join("")}
+              </ul>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+  }
+
+  const componentsContainer = document.getElementById("hw-components-container");
+  if (componentsContainer) {
+    const subsystemKeys = [
+      { key: "section_4_cpu_diagnostics", label: "CPU / Processor", icon: "cpu" },
+      { key: "section_5_ram_diagnostics", label: "RAM / Memory", icon: "hard-drive" },
+      { key: "section_6_storage_diagnostics", label: "Storage (SSD/HDD/NVMe)", icon: "database" },
+      { key: "section_7_gpu_diagnostics", label: "GPU / Graphics", icon: "monitor" },
+      { key: "section_8_motherboard_and_firmware", label: "Motherboard & BIOS", icon: "box" },
+      { key: "section_9_cooling_and_temperature_analysis", label: "Cooling & Thermals", icon: "activity" },
+      { key: "section_10_battery_health", label: "Battery Health", icon: "battery" },
+      { key: "section_11_network_adapter_diagnostics", label: "Network Devices", icon: "wifi" },
+      { key: "section_12_additional_device_inventory", label: "Additional Devices", icon: "layers" }
+    ];
+
+    componentsContainer.innerHTML = subsystemKeys.map(sub => {
+      const sec = report[sub.key] || {};
+      const assessment = sec.assessment || {};
+      const stat = assessment.health_status || "HEALTHY";
+      const statBadge = stat === "CRITICAL" ? "badge-critical" : (stat === "WARNING" ? "badge-warning" : (stat === "NOT AVAILABLE" ? "badge-unknown" : "badge-healthy"));
+      const reasons = (assessment.reasons || []).join("<br>");
+      const evList = (assessment.evidence || []).map(ev => `<li>${escapeHtml(ev)}</li>`).join("");
+
+      return `
+        <div class="card" style="display: flex; flex-direction: column; justify-content: space-between; gap: 10px; background: var(--bg-surface);">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px;">
+              <strong style="font-size: 13px; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
+                ${escapeHtml(sub.label)}
+              </strong>
+              <span class="badge ${statBadge}">${escapeHtml(stat)}</span>
+            </div>
+            <p style="font-size: 11px; color: var(--text-secondary); margin: 8px 0 6px 0; line-height: 1.4;">${reasons}</p>
+          </div>
+          <div>
+            <div style="font-size: 10px; color: var(--accent-primary); text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">Telemetry & Evidence:</div>
+            <ul style="font-size: 11px; color: var(--text-muted); margin: 0 0 0 16px; padding: 0; max-height: 120px; overflow-y: auto;">
+              ${evList}
+            </ul>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  const testsContainer = document.getElementById("hw-tests-container");
+  if (testsContainer) {
+    if (Object.keys(tests).length === 0) {
+      testsContainer.innerHTML = '<span style="color: var(--text-muted);">Active diagnostic tests were skipped in Fast mode. Run a Detailed Diagnostic Scan to verify ALU, heap memory, and disk latency.</span>';
+    } else {
+      testsContainer.innerHTML = Object.entries(tests).map(([k, t]) => `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border-subtle);">
+          <div>
+            <strong style="color: var(--text-primary);">${escapeHtml(t.test_name)}</strong>
+            <div style="font-size: 11px; color: var(--text-muted);">${escapeHtml(t.details || "")}</div>
+          </div>
+          <span class="badge ${t.status === 'HEALTHY' ? 'badge-healthy' : 'badge-warning'}">${escapeHtml(t.status)} (${t.duration_ms} ms)</span>
+        </div>
+      `).join("");
+    }
+  }
+
+  const eventsContainer = document.getElementById("hw-events-container");
+  if (eventsContainer) {
+    if (events.length === 0) {
+      eventsContainer.innerHTML = '<span style="color: var(--text-muted);">Zero hardware-related error events (WHEA, Disk, MemoryDiagnostics) recorded in System event logs over the last 72 hours.</span>';
+    } else {
+      eventsContainer.innerHTML = events.map(e => `
+        <div style="padding: 6px 0; border-bottom: 1px solid var(--border-subtle);">
+          <div style="display: flex; justify-content: space-between; font-size: 11px;">
+            <strong style="color: var(--text-primary);">${escapeHtml(e.category)} • Event ID ${e.event_id}</strong>
+            <span style="color: var(--text-muted);">${escapeHtml(e.timestamp)}</span>
+          </div>
+          <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">${escapeHtml(e.message)}</div>
+        </div>
+      `).join("");
+    }
+  }
+}
+
+async function startHardwareScan(mode) {
+  const progressCard = document.getElementById("hw-progress-card");
+  const cancelBtn = document.getElementById("hw-btn-cancel");
+  const fastBtn = document.getElementById("hw-btn-fast");
+  const detailedBtn = document.getElementById("hw-btn-detailed");
+
+  if (progressCard) progressCard.style.display = "block";
+  if (cancelBtn) cancelBtn.style.display = "inline-block";
+  if (fastBtn) fastBtn.disabled = true;
+  if (detailedBtn) detailedBtn.disabled = true;
+
+  updateHwProgressBar(5, "Initializing", `Starting ${mode.toUpperCase()} hardware diagnostic probe...`, 0);
+
+  try {
+    const res = await api.call("start_hardware_scan", mode);
+    if (!res.success) {
+      showToast("Scan Warning", res.message, "warning");
+      resetHwScanButtons();
+      return;
+    }
+    startHwProgressPolling();
+  } catch (err) {
+    showToast("Scan Error", String(err), "critical");
+    resetHwScanButtons();
+  }
+}
+
+function startHwProgressPolling() {
+  if (hwPollTimer) clearInterval(hwPollTimer);
+  hwPollTimer = setInterval(async () => {
+    try {
+      const prog = await api.call("get_hardware_scan_progress");
+      if (!prog) return;
+
+      updateHwProgressBar(prog.progress_percent, prog.current_stage, prog.current_test, prog.elapsed_ms);
+
+      if (!prog.is_running) {
+        clearInterval(hwPollTimer);
+        hwPollTimer = null;
+        resetHwScanButtons();
+
+        const report = await api.call("get_latest_hardware_report");
+        if (report) {
+          renderHardwareReportData(report);
+          showToast("Hardware Scan Complete", `Completed ${report.report_metadata?.scan_type} hardware diagnostic scan.`, "healthy");
+        }
+      }
+    } catch (e) {
+      console.warn("hw progress polling error:", e);
+    }
+  }, 400);
+}
+
+function updateHwProgressBar(pct, stage, test, elapsed) {
+  const pBar = document.getElementById("hw-progress-bar");
+  const pPct = document.getElementById("hw-progress-pct");
+  const pStage = document.getElementById("hw-progress-stage");
+  const pTest = document.getElementById("hw-progress-test");
+  const pTime = document.getElementById("hw-progress-time");
+
+  if (pBar) pBar.style.width = `${pct}%`;
+  if (pPct) pPct.textContent = `${pct}%`;
+  if (pStage) pStage.textContent = stage || "Scanning...";
+  if (pTest) pTest.textContent = `Active Probe: ${test || ""}`;
+  if (pTime && elapsed) pTime.textContent = `Elapsed: ${Math.round(elapsed)} ms`;
+}
+
+function resetHwScanButtons() {
+  const cancelBtn = document.getElementById("hw-btn-cancel");
+  const fastBtn = document.getElementById("hw-btn-fast");
+  const detailedBtn = document.getElementById("hw-btn-detailed");
+  if (cancelBtn) cancelBtn.style.display = "none";
+  if (fastBtn) fastBtn.disabled = false;
+  if (detailedBtn) detailedBtn.disabled = false;
+}
+
+async function cancelHardwareScan() {
+  try {
+    await api.call("cancel_hardware_scan");
+    if (hwPollTimer) {
+      clearInterval(hwPollTimer);
+      hwPollTimer = null;
+    }
+    resetHwScanButtons();
+    updateHwProgressBar(0, "Cancelled", "Scan aborted by user", 0);
+    showToast("Scan Cancelled", "Hardware diagnostic scan cancelled.", "warning");
+  } catch (err) {
+    showToast("Error", String(err), "critical");
+  }
+}
+
+function toggleHwExportDropdown() {
+  const menu = document.getElementById("hw-export-dropdown");
+  if (!menu) return;
+  menu.style.display = menu.style.display === "block" ? "none" : "block";
+}
+
+document.addEventListener("click", (e) => {
+  const menu = document.getElementById("hw-export-dropdown");
+  if (menu && !e.target.closest(".dropdown")) {
+    menu.style.display = "none";
+  }
+});
+
+async function exportHardwareReport(format) {
+  try {
+    const dropdown = document.getElementById("hw-export-dropdown");
+    if (dropdown) dropdown.style.display = "none";
+
+    showToast("Exporting Report", `Compiling hardware diagnostic ${format.toUpperCase()} report...`, "healthy");
+    const res = await api.call("export_hardware_report", format);
+    if (res && res.success) {
+      showToast("Report Exported", `Report saved to: ${res.file_name}`, "healthy");
+    } else {
+      showToast("Export Failed", res.message || "Could not export report", "critical");
+    }
+  } catch (err) {
+    showToast("Export Error", String(err), "critical");
+  }
+}
+
+async function openCompatibilityMatrixModal() {
+  const modal = document.getElementById("compatibility-matrix-modal");
+  const tbody = document.getElementById("compatibility-matrix-tbody");
+  if (!modal || !tbody) return;
+
+  modal.classList.add("modal-open");
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 16px;">Loading matrix...</td></tr>';
+
+  try {
+    const matrix = await api.call("get_hardware_compatibility_matrix");
+    if (!matrix) return;
+
+    tbody.innerHTML = matrix.map(m => `
+      <tr style="border-bottom: 1px solid var(--border-subtle);">
+        <td style="padding: 8px 10px; font-weight: 600; color: var(--accent-primary);">${escapeHtml(m.category)}</td>
+        <td style="padding: 8px 10px; color: var(--text-primary);">${escapeHtml(m.check_item)}<div style="font-size: 10px; color: var(--text-muted);">${escapeHtml(m.notes || "")}</div></td>
+        <td style="padding: 8px 10px; color: var(--status-healthy);">${escapeHtml(m.normal_windows)}</td>
+        <td style="padding: 8px 10px; color: ${m.admin_required === 'Yes' ? 'var(--status-warning)' : 'var(--text-secondary)'}; font-weight: 600;">${escapeHtml(m.admin_required)}</td>
+        <td style="padding: 8px 10px; color: ${m.winpe_status.includes('Fully') ? 'var(--status-healthy)' : 'var(--text-secondary)'};">${escapeHtml(m.winpe_status)}</td>
+      </tr>
+    `).join("");
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="5" style="color: var(--status-critical); padding: 16px;">Error loading matrix: ${escapeHtml(String(err))}</td></tr>`;
+  }
+}
+
+function closeCompatibilityMatrixModal() {
+  const modal = document.getElementById("compatibility-matrix-modal");
+  if (modal) modal.classList.remove("modal-open");
 }
 

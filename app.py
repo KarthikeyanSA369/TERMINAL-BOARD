@@ -139,6 +139,9 @@ def main():
     parser.add_argument("--headless", action="store_true", help="Run background collection once and exit")
     parser.add_argument("--send-daily-report", action="store_true", help="Generate and dispatch daily 7:00 PM full-system diagnostic email report, then exit")
     parser.add_argument("--check-driver-alerts", action="store_true", help="Evaluate hardware driver faults and alert if critical, then exit")
+    parser.add_argument("--hardware-scan", action="store_true", help="Execute complete hardware discovery and health assessment from command line, then exit")
+    parser.add_argument("--detailed-scan", action="store_true", help="Execute detailed hardware scan including active diagnostic stress tests")
+    parser.add_argument("--export-report", type=str, choices=["json", "txt", "html", "all"], default="all", help="Export hardware diagnostic report format (default: all)")
     args = parser.parse_args()
 
     # 1. Initialize SQLite Database
@@ -168,6 +171,50 @@ def main():
             return 0
         except Exception as e:
             logger.error(f"Error during driver fault check: {e}")
+            return 1
+        finally:
+            cleanup()
+
+    if args.hardware_scan or args.detailed_scan:
+        if sys.platform == "win32":
+            try:
+                import ctypes
+                ctypes.windll.kernel32.AttachConsole(-1)
+            except Exception:
+                pass
+        mode = "detailed" if args.detailed_scan else "fast"
+        logger.info(f"Executing CLI {mode.upper()} hardware diagnostic assessment...")
+        try:
+            from backend.core.hardware_diagnostics import run_hardware_assessment
+            from backend.core.fault_correlation import correlate_faults
+            from backend.core.hardware_report import (
+                build_full_report_model, export_report_json, export_report_txt, export_report_html
+            )
+            from backend.core.driver_inventory import get_complete_driver_inventory
+
+            def _cli_progress(pct, stage, test):
+                print(f"[{pct:>3}%] {stage}: {test}")
+
+            assess_res = run_hardware_assessment(scan_type=mode, progress_callback=_cli_progress)
+            drivers = get_complete_driver_inventory()
+            findings = correlate_faults(assess_res["inventory"], assess_res["error_events"], assess_res["diagnostic_tests"], drivers)
+            report = build_full_report_model(assess_res, findings)
+
+            fmt = args.export_report
+            if fmt in ("json", "all"):
+                jp = export_report_json(report)
+                print(f"[EXPORT] JSON report: {jp}")
+            if fmt in ("txt", "all"):
+                tp = export_report_txt(report)
+                print(f"[EXPORT] TXT report: {tp}")
+            if fmt in ("html", "all"):
+                hp = export_report_html(report)
+                print(f"[EXPORT] HTML report: {hp}")
+
+            print(f"\n[SUMMARY] Overall Health: {report['report_metadata']['overall_status']} | Components: {len(report['section_3_hardware_inventory'])} | Findings: {len(findings)}")
+            return 0
+        except Exception as e:
+            logger.error(f"Error during CLI hardware scan: {e}")
             return 1
         finally:
             cleanup()
