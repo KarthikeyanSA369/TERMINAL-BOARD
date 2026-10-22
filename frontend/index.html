@@ -1,0 +1,1387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TERMINAL BOARD — Windows System Diagnostics &amp; Health Monitoring</title>
+  <link rel="icon" type="image/x-icon" href="assets/icon.ico">
+  <link rel="stylesheet" href="css/neumorphic.css">
+</head>
+<body>
+  <!-- Fast Startup Splash / Loading Screen -->
+  <div id="splash-screen">
+    <div class="splash-logo-container">
+      <img src="assets/logo_master.png" alt="TERMINAL BOARD Logo" class="splash-logo-img">
+      <div style="text-align: center;">
+        <h1 class="splash-title">TERMINAL <span class="brand-board">BOARD</span></h1>
+        <div class="splash-tagline">Hardware Telemetry &amp; System Diagnostics</div>
+      </div>
+      <div class="loading-dots">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+  </div>
+
+  <div id="app">
+    <!-- Left Navigation Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon">
+          <img src="assets/logo_emblem_64.png" alt="TERMINAL BOARD Logo" class="brand-logo-img">
+        </div>
+        <div class="brand-info">
+          <h1>TERMINAL <span class="brand-board">BOARD</span></h1>
+          <span class="brand-tagline">Detect. Understand. Fix.</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a class="nav-item active" data-page="dashboard">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
+          </span>
+          <span>Dashboard</span>
+        </a>
+
+        <a class="nav-item" data-page="system_health">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+          </span>
+          <span>System Health</span>
+        </a>
+
+        <a class="nav-item" data-page="drive_health">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="12" x2="2" y2="12"></line><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path><line x1="6" y1="16" x2="6.01" y2="16"></line><line x1="10" y1="16" x2="10.01" y2="16"></line></svg>
+          </span>
+          <span>Drive Health</span>
+        </a>
+
+        <a class="nav-item" data-page="windows_errors">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+          </span>
+          <span>Windows Errors</span>
+        </a>
+
+        <a class="nav-item" data-page="network_monitor">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
+          </span>
+          <span>Network Monitor</span>
+        </a>
+
+        <a class="nav-item" data-page="installed_tools">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+          </span>
+          <span>Installed Tools</span>
+        </a>
+
+        <a class="nav-item" data-page="license_audit">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="M9 15l2 2 4-4"></path></svg>
+          </span>
+          <span>License Audit</span>
+        </a>
+
+        <a class="nav-item" data-page="alerts_history">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+          </span>
+          <span>Alerts & History</span>
+        </a>
+
+        <a class="nav-item" data-page="diagnostics">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+          </span>
+          <span>Diagnostics</span>
+        </a>
+
+        <a class="nav-item" data-page="settings">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          </span>
+          <span>Settings</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="monitor-status-pill">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div id="pulse-status-dot" class="pulse-dot"></div>
+            <span id="pulse-status-text" style="font-size: 11px; color: var(--text-secondary);">Live Monitoring</span>
+          </div>
+          <button id="monitor-toggle-btn" class="btn" style="padding: 2px 8px; font-size: 10px;">Pause</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Wrapper -->
+    <main class="main-wrapper">
+      <!-- Top Header -->
+      <header class="top-header">
+        <div class="header-title-box">
+          <h2 id="header-page-title">System Overview Dashboard</h2>
+          <p id="header-page-subtitle">Real-time telemetry and monitored developer tool inspection</p>
+        </div>
+
+        <div class="header-controls">
+          <div class="search-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input id="global-search-input" type="text" placeholder="Search tools, alerts...">
+          </div>
+
+          <div id="header-health-badge" class="health-badge badge-healthy">
+            <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--status-healthy);"></span>
+            <span>Healthy Status</span>
+          </div>
+
+          <button id="header-refresh-btn" class="icon-btn" title="Refresh Live Data" aria-label="Refresh Live Data">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+          </button>
+
+          <button id="theme-toggle-btn" class="icon-btn" title="Toggle Light / Dark Mode" aria-label="Toggle Light / Dark Mode">
+            <span id="theme-icon-container">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+            </span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Page Views Container -->
+      <div class="page-container">
+        
+        <!-- 1. DASHBOARD VIEW -->
+        <section id="page-dashboard" class="page-view active">
+          <!-- Active Alerts Warning Banner (Dynamic) -->
+          <div id="dash-alerts-banner" class="card" style="display: none; border-color: var(--status-warning);"></div>
+
+          <!-- Top Row: 4 System Monitoring Cards -->
+          <div class="metrics-grid-4">
+            <!-- RAM Card -->
+            <div class="card metric-card" onclick="navigate('system_health')">
+              <div class="metric-top-bar">
+                <span class="card-title">RAM Usage</span>
+                <div class="metric-icon-wrap">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"></rect><rect x="2" y="14" width="20" height="8" rx="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+                </div>
+              </div>
+              <div class="metric-value-box">
+                <span id="dash-ram-percent" class="metric-huge">--%</span>
+                <span id="dash-ram-details" class="metric-unit">0 GB / 0 GB</span>
+              </div>
+              <div class="progress-track">
+                <div id="dash-ram-bar" class="progress-fill healthy" style="width: 0%;"></div>
+              </div>
+              <div class="metric-subtext">
+                <span id="dash-ram-avail">Available: --</span>
+                <span>Active</span>
+              </div>
+            </div>
+
+            <!-- CPU Card -->
+            <div class="card metric-card" onclick="navigate('system_health')">
+              <div class="metric-top-bar">
+                <span class="card-title">CPU Load</span>
+                <div class="metric-icon-wrap">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"></rect><line x1="9" y1="9" x2="15" y2="9"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+                </div>
+              </div>
+              <div class="metric-value-box">
+                <span id="dash-cpu-percent" class="metric-huge">--%</span>
+                <span id="dash-cpu-cores" class="metric-unit">-- Cores</span>
+              </div>
+              <div id="dash-cpu-sparkline" style="height: 36px;"></div>
+              <div class="metric-subtext">
+                <span id="dash-cpu-freq">Clock: --</span>
+                <span>History</span>
+              </div>
+            </div>
+
+            <!-- DISK Card -->
+            <div class="card metric-card" onclick="navigate('drive_health')">
+              <div class="metric-top-bar">
+                <span class="card-title">System Disk</span>
+                <div class="metric-icon-wrap">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="12" x2="2" y2="12"></line><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
+                </div>
+              </div>
+              <div class="metric-value-box">
+                <span id="dash-disk-percent" class="metric-huge">--%</span>
+                <span id="dash-disk-details" class="metric-unit">-- GB Free</span>
+              </div>
+              <div class="progress-track">
+                <div id="dash-disk-bar" class="progress-fill healthy" style="width: 0%;"></div>
+              </div>
+              <div class="metric-subtext">
+                <span id="dash-disk-mount">Volume C:</span>
+                <span>SMART OK</span>
+              </div>
+            </div>
+
+            <!-- BATTERY Card -->
+            <div class="card metric-card" onclick="navigate('system_health')">
+              <div class="metric-top-bar">
+                <span class="card-title">Power & Battery</span>
+                <div class="metric-icon-wrap">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="6" width="18" height="12" rx="2"></rect><line x1="23" y1="13" x2="23" y2="11"></line></svg>
+                </div>
+              </div>
+              <div class="metric-value-box">
+                <span id="dash-bat-percent" class="metric-huge">--</span>
+                <span id="dash-bat-status" class="metric-unit">Checking</span>
+              </div>
+              <div class="progress-track">
+                <div id="dash-bat-bar" class="progress-fill healthy" style="width: 100%;"></div>
+              </div>
+              <div class="metric-subtext">
+                <span id="dash-bat-time">Power Source</span>
+                <span>Telemetry</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Installed Tools & Software Section -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Installed Tools & Developer Environment</h3>
+                <span class="card-subtitle">Select an application card to inspect verified version, executable path, and license details</span>
+              </div>
+              <button class="btn" onclick="navigate('installed_tools')">View All Software →</button>
+            </div>
+            <div id="dash-tools-grid" class="tools-grid">
+              <!-- Dynamically Populated -->
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. SYSTEM HEALTH VIEW -->
+        <section id="page-system_health" class="page-view">
+          <!-- Sub-navigation Tabs -->
+          <div class="tab-bar">
+            <button id="tab-btn-perf" class="tab-btn active" onclick="switchSystemHealthTab('perf')">System Performance & Processes</button>
+            <button id="tab-btn-drivers" class="tab-btn" onclick="switchSystemHealthTab('drivers')">Hardware Devices & Drivers</button>
+          </div>
+
+          <!-- Tab 1: System Performance & Processes -->
+          <div id="tab-sys-perf">
+            <div class="perf-dashboard-grid">
+              <div class="card">
+                <div class="card-header">
+                  <h3 class="card-title">CPU Multi-Core Distribution</h3>
+                  <span id="sys-uptime-text" class="card-subtitle">Uptime: --</span>
+                </div>
+                <div id="sys-cpu-cores-list" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px;">
+                  <!-- Dynamically Populated -->
+                </div>
+              </div>
+
+              <div class="card" style="display: flex; flex-direction: column; gap: 14px;">
+                <h3 class="card-title">Memory & Hardware Sensors</h3>
+                <div style="background: var(--bg-surface); padding: 12px; border-radius: 8px;">
+                  <span style="font-size: 11px; color: var(--text-secondary);">Active RAM Allocation</span>
+                  <div style="font-weight: 700; font-size: 15px; margin-top: 2px;" id="sys-ram-used-text">--</div>
+                  <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Available: <span id="sys-ram-avail-text">--</span></div>
+                </div>
+                <div style="background: var(--bg-surface); padding: 12px; border-radius: 8px;">
+                  <span style="font-size: 11px; color: var(--text-secondary);">Pagefile / Virtual Memory</span>
+                  <div style="font-weight: 700; font-size: 15px; margin-top: 2px;" id="sys-swap-used-text">--</div>
+                </div>
+                <div style="background: var(--bg-surface); padding: 12px; border-radius: 8px;">
+                  <span style="font-size: 11px; color: var(--text-secondary);">Thermal Sensor Telemetry</span>
+                  <p id="sys-sensor-notice" style="font-size: 11px; color: var(--text-muted); margin-top: 4px; line-height: 1.4;">Checking sensors...</p>
+                </div>
+                <div style="font-size: 11px; color: var(--text-muted);" id="sys-boot-time">Booted: --</div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Top Active Processes (Resource Consumers)</h3>
+                <span class="card-subtitle">Real-time memory and CPU utilization per process</span>
+              </div>
+              <div class="table-container">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Process Name</th>
+                      <th>PID</th>
+                      <th>CPU %</th>
+                      <th>Memory</th>
+                      <th>Status</th>
+                      <th>User</th>
+                      <th>Safe Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="sys-processes-table-body">
+                    <!-- Dynamically Populated -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab 2: Hardware Devices & Drivers Diagnostics -->
+          <div id="tab-sys-drivers" style="display: none;">
+            <!-- Driver Diagnostics Controls & Metrics -->
+            <div class="card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+              <div>
+                <h3 class="card-title">Hardware Devices & Driver Inventory</h3>
+                <span id="drivers-subtitle" class="card-subtitle">Inspecting PnP devices and driver packages...</span>
+              </div>
+              <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="btn" onclick="refreshDriverInventoryData()">Rescan Drivers</button>
+                <button class="btn" onclick="exportDriverReport('csv')">Export CSV</button>
+                <button class="btn btn-primary" onclick="exportDriverReport('html')">Export HTML Report</button>
+              </div>
+            </div>
+
+            <!-- Driver Health Metrics Cards -->
+            <div class="stat-cards-grid-5">
+              <div class="card" style="padding: 14px 18px;">
+                <span style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase;">Total Devices Scanned</span>
+                <div id="drv-stat-total" style="font-size: 22px; font-weight: 700; color: var(--text-primary); margin-top: 4px;">--</div>
+                <span style="font-size: 11px; color: var(--text-muted);">Registered PnP hardware</span>
+              </div>
+              <div class="card" style="padding: 14px 18px;">
+                <span style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase;">Healthy Drivers</span>
+                <div id="drv-stat-healthy" style="font-size: 22px; font-weight: 700; color: var(--status-healthy); margin-top: 4px;">--</div>
+                <span style="font-size: 11px; color: var(--text-muted);">Normal operation (Code 0)</span>
+              </div>
+              <div class="card" style="padding: 14px 18px;">
+                <span style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase;">Driver Warnings</span>
+                <div id="drv-stat-warning" style="font-size: 22px; font-weight: 700; color: var(--status-warning); margin-top: 4px;">--</div>
+                <span style="font-size: 11px; color: var(--text-muted);">Disabled or degraded devices</span>
+              </div>
+              <div class="card" style="padding: 14px 18px;">
+                <span style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase;">Critical Issues</span>
+                <div id="drv-stat-critical" style="font-size: 22px; font-weight: 700; color: var(--status-critical); margin-top: 4px;">--</div>
+                <span style="font-size: 11px; color: var(--text-muted);">Hardware/driver failure codes</span>
+              </div>
+              <div class="card" style="padding: 14px 18px;">
+                <span style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase;">Unavailable / Restricted</span>
+                <div id="drv-stat-unavailable" style="font-size: 22px; font-weight: 700; color: var(--text-muted); margin-top: 4px;">--</div>
+                <span style="font-size: 11px; color: var(--text-muted);">Unchecked or WinPE limited</span>
+              </div>
+            </div>
+
+            <!-- Search and Filter Controls -->
+            <div class="card" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+              <div class="search-box" style="flex: 1; min-width: 200px;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input id="drv-search-input" type="text" placeholder="Search device name, manufacturer, provider, or driver version..." oninput="filterDriversTable()">
+              </div>
+              <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <select id="drv-class-filter" class="form-select" onchange="filterDriversTable()">
+                  <option value="all">All Device Classes</option>
+                  <!-- Dynamically populated classes -->
+                </select>
+                <select id="drv-health-filter" class="form-select" onchange="filterDriversTable()">
+                  <option value="all">All Health Levels</option>
+                  <option value="HEALTHY">Healthy Only</option>
+                  <option value="WARNING">Warnings</option>
+                  <option value="CRITICAL">Critical Issues</option>
+                  <option value="NOT AVAILABLE">Unavailable / Restricted</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Drivers Table -->
+            <div class="card">
+              <div class="table-container">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Device Name</th>
+                      <th>Category</th>
+                      <th>Manufacturer / Provider</th>
+                      <th>Driver Version</th>
+                      <th>Driver Date</th>
+                      <th>Health Status</th>
+                      <th>PnP Telemetry / Reason</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="drivers-table-body">
+                    <!-- Dynamically Populated -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. DRIVE HEALTH VIEW -->
+        <section id="page-drive_health" class="page-view">
+          <div class="card" style="border-left: 4px solid var(--accent-primary);">
+            <h3 class="card-title">Windows Physical Storage & Failure Detection</h3>
+            <p style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+              Direct hardware diagnostics for HDD, SATA SSD, and NVMe drives querying operational status, wear metrics, and SMART reliability counters.
+            </p>
+          </div>
+          <div id="drive-health-cards-container" style="display: flex; flex-direction: column; gap: 18px;">
+            <!-- Dynamically Populated -->
+          </div>
+        </section>
+
+        <!-- 4. WINDOWS ERRORS VIEW -->
+        <section id="page-windows_errors" class="page-view">
+          <div class="card">
+            <div class="card-header" style="flex-wrap: wrap; gap: 12px;">
+              <div>
+                <h3 class="card-title">Windows Event Log & Crash Inspector</h3>
+                <span class="card-subtitle">Monitoring disk errors, unexpected kernel shutdowns (Event 41), and application crashes (Event 1000)</span>
+              </div>
+              <div style="display: flex; gap: 10px;">
+                <select id="win-log-filter" class="form-select" onchange="renderWindowsErrors()">
+                  <option value="All">All Logs (System & App)</option>
+                  <option value="System">System Log</option>
+                  <option value="Application">Application Log</option>
+                </select>
+                <select id="win-sev-filter" class="form-select" onchange="renderWindowsErrors()">
+                  <option value="All">All Severities</option>
+                  <option value="Critical">Critical Only</option>
+                  <option value="Error">Error Only</option>
+                  <option value="Warning">Warning Only</option>
+                </select>
+              </div>
+            </div>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Level</th>
+                    <th>Timestamp</th>
+                    <th>Provider</th>
+                    <th>Event ID</th>
+                    <th>Category</th>
+                    <th>Event Description</th>
+                  </tr>
+                </thead>
+                <tbody id="win-errors-table-body">
+                  <!-- Dynamically Populated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- 5. NETWORK MONITOR VIEW -->
+        <section id="page-network_monitor" class="page-view">
+          <div id="net-status-banner" class="card">
+            <!-- Dynamically Populated -->
+          </div>
+
+          <div class="metrics-grid-4">
+            <div class="card metric-card">
+              <span class="card-title">Default Gateway</span>
+              <div class="metric-value-box">
+                <span id="net-gateway-ip" class="metric-huge" style="font-size: 20px;">--</span>
+              </div>
+              <div class="metric-subtext">
+                <span id="net-gateway-status">Checking...</span>
+                <span>Local Route</span>
+              </div>
+            </div>
+
+            <div class="card metric-card">
+              <span class="card-title">DNS Resolution</span>
+              <div class="metric-value-box">
+                <span id="net-dns-status" class="metric-huge" style="font-size: 18px;">--</span>
+              </div>
+              <div class="metric-subtext">
+                <span>cloudflare.com</span>
+                <span>Resolver</span>
+              </div>
+            </div>
+
+            <div class="card metric-card">
+              <span class="card-title">Internet Latency</span>
+              <div class="metric-value-box">
+                <span id="net-ping-avg" class="metric-huge" style="font-size: 20px;">--</span>
+              </div>
+              <div class="metric-subtext">
+                <span>Ping to 1.1.1.1</span>
+                <span>WAN</span>
+              </div>
+            </div>
+
+            <div class="card metric-card">
+              <span class="card-title">Packet Loss</span>
+              <div class="metric-value-box">
+                <span id="net-packet-loss" class="metric-huge">--%</span>
+              </div>
+              <div class="metric-subtext">
+                <span>Sampled 4 packets</span>
+                <span>Quality</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="two-col-grid">
+            <div class="card">
+              <h3 class="card-title" style="margin-bottom: 14px;">Active Network Adapters</h3>
+              <div id="net-adapters-list" style="display: flex; flex-direction: column; gap: 8px;">
+                <!-- Dynamically Populated -->
+              </div>
+            </div>
+
+            <div class="card">
+              <h3 class="card-title" style="margin-bottom: 14px;">Localhost Development Ports</h3>
+              <div class="table-container">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Port</th>
+                      <th>Typical Service</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="net-dev-ports-body">
+                    <!-- Dynamically Populated -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 6. INSTALLED TOOLS VIEW -->
+        <section id="page-installed_tools" class="page-view">
+          <div class="card" style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <h3 class="card-title">Software & Developer Tools Inventory</h3>
+              <span id="tools-total-count" class="card-subtitle">Scanning system...</span>
+            </div>
+            <button class="btn btn-primary" onclick="api.call('refresh_installed_tools').then(renderInstalledTools)">
+              Rescan Software
+            </button>
+          </div>
+          <div id="tools-full-grid" class="tools-grid">
+            <!-- Dynamically Populated -->
+          </div>
+        </section>
+
+        <!-- 7. LICENSE AUDIT VIEW -->
+        <section id="page-license_audit" class="page-view">
+          <div class="card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div>
+              <h3 class="card-title">License Audit & Compliance Verification</h3>
+              <span id="license-total-count" class="card-subtitle">Auditing software licenses & activations...</span>
+            </div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <button class="btn" onclick="refreshLicenseAuditData()">Rescan Licenses</button>
+              <button class="btn" onclick="openManualLicenseModal()">+ Add Manual Subscription</button>
+              <button class="btn" onclick="exportLicenseAudit('csv')">Export CSV</button>
+              <button class="btn" onclick="exportLicenseAudit('html')">Export HTML Report</button>
+              <button class="btn btn-primary" onclick="exportCombinedComplianceReport()">Compliance Audit Report</button>
+            </div>
+          </div>
+
+          <!-- Windows & Office Activation Status Hero Cards -->
+          <div class="activation-hero-grid">
+            <!-- Windows Activation Card -->
+            <div class="activation-card">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--accent-primary);"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
+                  <strong style="font-size: 13px; color: var(--text-primary);">Windows OS Activation</strong>
+                </div>
+                <span id="win-act-badge" class="badge badge-healthy">Checking...</span>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 4px; font-size: 12px;">
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="color: var(--text-secondary);">Edition / Product:</span>
+                  <span id="win-act-product" style="font-weight: 600; color: var(--text-primary);">--</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="color: var(--text-secondary);">Licensing Channel:</span>
+                  <span id="win-act-channel" style="color: var(--text-primary);">--</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="color: var(--text-secondary);">Diagnostic Interface:</span>
+                  <span style="color: var(--text-muted); font-size: 11px;">CIM SoftwareLicensingProduct (Read-Only)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Microsoft Office Activation Card -->
+            <div class="activation-card">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #F59E0B;"><rect x="4" y="4" width="16" height="16" rx="2"></rect><line x1="9" y1="9" x2="15" y2="15"></line><line x1="15" y1="9" x2="9" y2="15"></line></svg>
+                  <strong style="font-size: 13px; color: var(--text-primary);">Microsoft Office Activation</strong>
+                </div>
+                <span id="office-act-badge" class="badge badge-unknown">Checking OSPP.VBS...</span>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 4px; font-size: 12px;">
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="color: var(--text-secondary);">Installed Suite:</span>
+                  <span id="office-act-product" style="font-weight: 600; color: var(--text-primary); max-width: 260px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">--</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="color: var(--text-secondary);">Channel & Key Suffix:</span>
+                  <span id="office-act-channel" style="color: var(--text-primary);">--</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="color: var(--text-secondary);">Telemetry Status:</span>
+                  <span id="office-act-diagnostic" style="color: var(--text-muted); font-size: 11px;">OSPP.VBS //nologo /dstatus</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Summary Metric Cards -->
+          <div class="stat-cards-grid-5">
+            <div class="card" style="padding: 14px 18px;">
+              <span style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase;">Total Audited</span>
+              <div id="lic-stat-total" style="font-size: 22px; font-weight: 700; color: var(--text-primary); margin-top: 4px;">--</div>
+              <span style="font-size: 11px; color: var(--text-muted);">Applications & suites</span>
+            </div>
+            <div class="card" style="padding: 14px 18px;">
+              <span style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase;">Verified Licenses</span>
+              <div id="lic-stat-verified" style="font-size: 22px; font-weight: 700; color: var(--status-healthy); margin-top: 4px;">--</div>
+              <span style="font-size: 11px; color: var(--text-muted);">Validated terms</span>
+            </div>
+            <div class="card" style="padding: 14px 18px;">
+              <span style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase;">Active Subscriptions</span>
+              <div id="lic-stat-active" style="font-size: 22px; font-weight: 700; color: var(--status-healthy); margin-top: 4px;">--</div>
+              <span style="font-size: 11px; color: var(--text-muted);">Verified active expiry</span>
+            </div>
+            <div class="card" style="padding: 14px 18px;">
+              <span style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase;">Expiring Soon</span>
+              <div id="lic-stat-expiring" style="font-size: 22px; font-weight: 700; color: var(--status-warning); margin-top: 4px;">--</div>
+              <span style="font-size: 11px; color: var(--text-muted);">&le; 30 days renewal</span>
+            </div>
+            <div class="card" style="padding: 14px 18px;">
+              <span style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase;">Expired / Attention</span>
+              <div id="lic-stat-review" style="font-size: 22px; font-weight: 700; color: var(--status-critical); margin-top: 4px;">--</div>
+              <span style="font-size: 11px; color: var(--text-muted);">Past expiry or concern</span>
+            </div>
+          </div>
+
+          <!-- Disclaimer / Legal Notice -->
+          <div class="card" style="border-left: 4px solid var(--accent-primary); font-size: 12px; color: var(--text-secondary); line-height: 1.5;">
+            <strong>Evidence-Based Audit Principle:</strong>
+            Discovered local license/EULA files document legal terms but do not prove purchase entitlement. Missing metadata does not indicate non-compliance or piracy. Office and Windows activation statuses are verified separately through supported read-only diagnostic interfaces. Full product keys and private credentials are never collected.
+          </div>
+
+          <!-- Filter & Search Controls -->
+          <div class="card" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+            <div class="search-box" style="flex: 1; min-width: 200px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <input id="lic-search-input" type="text" placeholder="Search application, publisher, or license..." oninput="filterLicenseAuditTable()">
+            </div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <select id="lic-category-filter" class="form-select" onchange="filterLicenseAuditTable()">
+                <option value="all">All License Categories</option>
+                <option value="Commercial">Commercial</option>
+                <option value="Subscription">Subscription</option>
+                <option value="Freeware">Freeware</option>
+                <option value="Open Source">Open Source</option>
+                <option value="Trial">Trial</option>
+                <option value="Unknown">Cryptic</option>
+              </select>
+              <select id="lic-status-filter" class="form-select" onchange="filterLicenseAuditTable()">
+                <option value="all">All Verification Statuses</option>
+                <option value="Verified license information">Verified license information</option>
+                <option value="Review required">Review required</option>
+                <option value="Potential licensing concern">Potential licensing concern</option>
+                <option value="Unknown">Cryptic</option>
+              </select>
+              <select id="lic-expiry-filter" class="form-select" onchange="filterLicenseAuditTable()">
+                <option value="all">All Expiry States</option>
+                <option value="ACTIVE">Active</option>
+                <option value="EXPIRING_SOON">Expiring Soon</option>
+                <option value="EXPIRED">Expired</option>
+                <option value="PERPETUAL">Perpetual / Non-Expiring</option>
+                <option value="GRACE_PERIOD">Grace Period</option>
+                <option value="UNKNOWN">Cryptic Expiry</option>
+              </select>
+              <select id="lic-source-filter" class="form-select" onchange="filterLicenseAuditTable()">
+                <option value="all">All Evidence Sources</option>
+                <option value="Vendor-reported">Vendor-reported information</option>
+                <option value="Windows-reported">Windows-reported activation</option>
+                <option value="Discovered local">Discovered local license files</option>
+                <option value="User-provided">User-provided compliance records</option>
+                <option value="Unknown">Cryptic or Inconclusive Evidence</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Table -->
+          <div class="card">
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Software Application</th>
+                    <th>Version</th>
+                    <th>License Category</th>
+                    <th>Declared License</th>
+                    <th>Activation Status</th>
+                    <th>Expiry State & Date</th>
+                    <th>Evidence Source & Method</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="license-audit-table-body">
+                  <!-- Dynamically Populated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- 8. ALERTS & HISTORY VIEW -->
+        <section id="page-alerts_history" class="page-view">
+          <div class="card" style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <h3 class="card-title">System Anomaly & Alert History</h3>
+              <span class="card-subtitle">Persistent condition tracking with repeated alert suppression</span>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <select id="alerts-status-filter" class="form-select" onchange="renderAlertsHistory()">
+                <option value="all">All Alerts</option>
+                <option value="active">Active Only</option>
+                <option value="acknowledged">Acknowledged</option>
+                <option value="dismissed">Dismissed</option>
+              </select>
+              <button class="btn" onclick="clearHistory('alerts')">Clear Alert History</button>
+            </div>
+          </div>
+
+          <div id="alerts-list-container" style="display: flex; flex-direction: column; gap: 12px;">
+            <!-- Dynamically Populated -->
+          </div>
+        </section>
+
+        <!-- 9. DIAGNOSTICS VIEW -->
+        <section id="page-diagnostics" class="page-view">
+          <div class="card" style="border-left: 4px solid var(--accent-primary);">
+            <h3 class="card-title">Evidence-Based Diagnostics & Safe Repairs</h3>
+            <p style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+              All diagnostic checks are safe and read-only. Corrective actions require explicit confirmation and never perform destructive operations.
+            </p>
+          </div>
+          <div id="diagnostics-cards-container" style="display: flex; flex-direction: column; gap: 16px;">
+            <!-- Dynamically Populated -->
+          </div>
+        </section>
+
+        <!-- 10. SETTINGS VIEW -->
+        <section id="page-settings" class="page-view">
+          <div class="card settings-card" style="display: flex; flex-direction: column; gap: 18px;">
+            <h3 class="card-title">Application &amp; Interface Preferences</h3>
+
+            <div class="form-group">
+              <label class="form-label">Interface Theme</label>
+              <select id="set-theme" class="form-select" onchange="applyTheme(this.value, true)">
+                <option value="dark">Dark Neumorphic (Default)</option>
+                <option value="light">Light Professional</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Native Windows Desktop Toast Notifications</label>
+              <select id="set-desktop-toast" class="form-select">
+                <option value="1">Enabled</option>
+                <option value="0">Disabled (In-App Only)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Diagnostic &amp; Telemetry Data Retention (Days: 1–365)</label>
+              <input id="set-retention" class="form-input" type="number" min="1" max="365" value="30">
+            </div>
+
+            <div style="display: flex; gap: 12px; margin-top: 8px;">
+              <button class="btn btn-primary" onclick="saveSettings()">Save Configuration</button>
+            </div>
+
+            <div id="settings-feedback" style="display: none; padding: 10px 14px; border-radius: 6px; font-size: 12px; margin-top: 4px;"></div>
+
+            <hr style="border: none; border-top: 1px solid var(--border-subtle); margin: 8px 0;">
+
+            <h4 style="font-size: 13px; font-weight: 600; color: var(--text-primary);">Data Storage Management</h4>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+              <button class="btn" onclick="clearHistory('metrics')">Clear Metric History</button>
+              <button class="btn" onclick="clearHistory('alerts')">Clear Alert History</button>
+              <button class="btn btn-danger" onclick="clearHistory('all')">Purge All Database Records</button>
+            </div>
+          </div>
+
+          <!-- Windows User Startup Integration -->
+          <div class="card settings-card" style="display: flex; flex-direction: column; gap: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 12px;">
+              <div>
+                <h3 class="card-title" style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
+                  Windows Startup Integration
+                </h3>
+                <p style="font-size: 12px; color: var(--text-secondary); margin: 4px 0 0 0;">
+                  Optionally launch TERMINAL BOARD automatically when you sign in to Windows.
+                </p>
+              </div>
+              <span id="startup-status-badge" class="badge badge-unknown">Checking...</span>
+            </div>
+
+            <div style="background: var(--bg-surface); padding: 14px 16px; border-radius: 8px; border: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <strong style="font-size: 13px; color: var(--text-primary);">Launch on User Sign-in</strong>
+                <div id="startup-status-desc" style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">
+                  Configures standard Current User Run key (HKCU). Safe, fully reversible, no administrator rights required.
+                </div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="set-windows-startup-toggle" onchange="toggleWindowsStartup(this.checked)">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div style="font-size: 11px; color: var(--text-muted); line-height: 1.4;">
+              Note: This registers the application in Windows User Startup (viewable in Task Manager &gt; Startup apps). It does not configure low-level boot services or boot before Windows starts.
+            </div>
+          </div>
+
+          <!-- Email Reports, Faulty Driver Alerts & Windows Task Scheduler Automation -->
+          <div class="card settings-card" style="display: flex; flex-direction: column; gap: 18px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 12px;">
+              <div>
+                <h3 class="card-title" style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                  <span>📧</span> Email Automation & Diagnostic Reports
+                </h3>
+                <p style="font-size: 12px; color: var(--text-secondary); margin: 4px 0 0 0;">
+                  Automated daily full-system snapshots, immediate faulty driver alerts, and secure SMTP transport.
+                </p>
+              </div>
+              <span id="email-vault-status-badge" class="badge badge-healthy" title="Protected using Windows DPAPI Credential Store">DPAPI Secured</span>
+            </div>
+
+            <!-- Recipient Configuration -->
+            <div class="form-group">
+              <label class="form-label" style="display: flex; justify-content: space-between;">
+                <span>Recipient Email Address</span>
+                <small style="color: var(--accent-primary); font-weight: normal;">Default: karthikeyansa369@gmail.com</small>
+              </label>
+              <input id="set-email-recipient" class="form-input" type="email" placeholder="karthikeyansa369@gmail.com" value="karthikeyansa369@gmail.com">
+            </div>
+
+            <!-- Daily Report Schedule & Windows Task Scheduler -->
+            <div style="background: var(--bg-surface); padding: 14px 16px; border-radius: 8px; border: 1px solid var(--border-subtle); display: flex; flex-direction: column; gap: 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <strong style="font-size: 13px; color: var(--text-primary);">Automatic Daily Full-System Report</strong>
+                  <div style="font-size: 11px; color: var(--text-secondary);">Comprehensive 24h health snapshot with attached CSV and HTML audits.</div>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="set-email-daily-enable" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: center;">
+                <div class="form-group" style="margin: 0;">
+                  <label class="form-label">Scheduled Dispatch Time (Local Windows Time)</label>
+                  <input id="set-email-daily-time" class="form-input" type="time" value="19:00">
+                </div>
+                <div>
+                  <label class="form-label">Next Scheduled Run</label>
+                  <div id="email-next-run-text" style="font-size: 12px; font-weight: 600; color: var(--text-primary); padding: 8px 12px; background: var(--bg-surface-alt); border-radius: 6px; border: 1px solid var(--border-subtle);">
+                    Today at 19:00
+                  </div>
+                </div>
+              </div>
+
+              <!-- Task Scheduler explicit consent control -->
+              <div style="border-top: 1px dashed var(--border-subtle); padding-top: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div>
+                  <span style="font-size: 12px; font-weight: 500; color: var(--text-primary);">Windows Task Scheduler (7:00 PM Daily)</span>
+                  <div id="email-task-scheduler-status" style="font-size: 11px; color: var(--text-muted);">Status: Checking...</div>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                  <button id="btn-register-scheduler" class="btn" style="font-size: 12px; padding: 6px 12px;" onclick="registerSchedulerJob()">
+                    Register Windows Task
+                  </button>
+                  <button id="btn-remove-scheduler" class="btn" style="font-size: 12px; padding: 6px 12px;" onclick="removeSchedulerJob()">
+                    Remove Task
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Faulty Driver Alerts -->
+            <div style="background: var(--bg-surface); padding: 14px 16px; border-radius: 8px; border: 1px solid var(--border-subtle); display: flex; flex-direction: column; gap: 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <strong style="font-size: 13px; color: var(--text-primary);">Immediate Faulty Driver Email Alerts</strong>
+                  <div style="font-size: 11px; color: var(--text-secondary);">Real-time dispatch upon critical hardware/driver failure (Codes 10, 19, 28, 31, 37, 38, 39, 43, 48).</div>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="set-email-driver-enable" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <span style="font-size: 12px; color: var(--text-primary);">Driver Recovery Notification</span>
+                  <div style="font-size: 11px; color: var(--text-secondary);">Send email when a previously faulty device recovers to healthy state.</div>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="set-email-recovery-enable" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+
+              <div class="form-group" style="margin: 0;">
+                <label class="form-label">Alert Deduplication Cooldown (Minutes)</label>
+                <input id="set-email-cooldown" class="form-input" type="number" min="5" max="1440" value="60">
+              </div>
+            </div>
+
+            <!-- SMTP Server Settings -->
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <h4 style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin: 4px 0 0 0;">
+                SMTP Outgoing Mail Transport
+              </h4>
+
+              <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px;">
+                <div class="form-group" style="margin: 0;">
+                  <label class="form-label">SMTP Server Host</label>
+                  <input id="set-smtp-host" class="form-input" type="text" placeholder="smtp.gmail.com" value="smtp.gmail.com">
+                </div>
+                <div class="form-group" style="margin: 0;">
+                  <label class="form-label">Port</label>
+                  <input id="set-smtp-port" class="form-input" type="number" value="587">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Transport Encryption Mode</label>
+                <select id="set-smtp-security" class="form-select">
+                  <option value="tls">STARTTLS (Port 587 - Recommended for Gmail / Outlook)</option>
+                  <option value="ssl">Implicit SSL/TLS (Port 465)</option>
+                  <option value="none">Plain Unencrypted (Port 25 - Not recommended)</option>
+                </select>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group" style="margin: 0;">
+                  <label class="form-label">Sender Email Address</label>
+                  <input id="set-smtp-sender" class="form-input" type="email" placeholder="sysfix-alerts@gmail.com">
+                </div>
+                <div class="form-group" style="margin: 0;">
+                  <label class="form-label">Username / Account</label>
+                  <input id="set-smtp-username" class="form-input" type="text" placeholder="username or email">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" style="display: flex; justify-content: space-between;">
+                  <span>SMTP App Password / Credentials</span>
+                  <small id="smtp-pwd-status" style="color: var(--text-muted);">Checking vault...</small>
+                </label>
+                <div style="display: flex; gap: 8px;">
+                  <input id="set-smtp-password" class="form-input" type="password" placeholder="Enter 16-character Google App Password" style="flex: 1;">
+                  <button type="button" class="btn" style="padding: 6px 12px;" onclick="togglePasswordVisibility('set-smtp-password')">👁️</button>
+                </div>
+                <small style="font-size: 11px; color: var(--text-muted); margin-top: 4px; display: block;">
+                  Credentials are encrypted using Windows DPAPI and stored only in your local profile vault. Plaintext passwords are never saved.
+                </small>
+              </div>
+            </div>
+
+            <!-- Email Action Buttons -->
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px;">
+              <button class="btn btn-primary" onclick="saveEmailSettings()">Save Email Settings</button>
+              <button class="btn" onclick="testSmtpConnection()">Test SMTP Connection</button>
+              <button class="btn" onclick="sendTestEmailNow()">Send Test Email</button>
+              <button class="btn" onclick="openEmailReportPreview()">Preview Daily Report</button>
+              <button class="btn btn-secondary" onclick="sendDailyReportNow()">Send Report Now</button>
+            </div>
+
+            <div id="email-action-feedback" style="display: none; padding: 10px 14px; border-radius: 6px; font-size: 12px; margin-top: 4px;"></div>
+          </div>
+        </section>
+
+
+      </div>
+    </main>
+  </div>
+
+  <!-- MODALS -->
+
+  <!-- 1. Tool Detail Modal -->
+  <div id="tool-detail-modal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="tool-modal-title" style="font-size: 16px; font-weight: 700; color: var(--text-primary);">Tool Details</h3>
+        <button class="icon-btn" onclick="closeToolDetailModal()" style="width: 28px; height: 28px;">✕</button>
+      </div>
+      <div class="modal-body">
+        <div>
+          <span style="font-size: 11px; color: var(--text-secondary);">Installed Version</span>
+          <div id="tool-modal-version" style="font-weight: 600; font-size: 14px; margin-top: 2px;">--</div>
+        </div>
+        <div>
+          <span style="font-size: 11px; color: var(--text-secondary);">Publisher / Vendor</span>
+          <div id="tool-modal-publisher" style="font-weight: 600; font-size: 14px; margin-top: 2px;">--</div>
+        </div>
+        <div>
+          <span style="font-size: 11px; color: var(--text-secondary);">Category</span>
+          <div id="tool-modal-category" style="font-weight: 500; font-size: 13px; margin-top: 2px;">--</div>
+        </div>
+        <div>
+          <span style="font-size: 11px; color: var(--text-secondary);">Installation Path</span>
+          <div id="tool-modal-path" style="font-size: 12px; font-family: monospace; background: var(--bg-surface); padding: 6px 10px; border-radius: 6px; margin-top: 2px; word-break: break-all;">--</div>
+        </div>
+        <div>
+          <span style="font-size: 11px; color: var(--text-secondary);">Executable Binary Location</span>
+          <div id="tool-modal-exe" style="font-size: 12px; font-family: monospace; background: var(--bg-surface); padding: 6px 10px; border-radius: 6px; margin-top: 2px; word-break: break-all;">--</div>
+        </div>
+        <div>
+          <span style="font-size: 11px; color: var(--text-secondary);">Discovered License File</span>
+          <div id="tool-modal-license-file" style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">--</div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: var(--bg-surface); padding: 10px 12px; border-radius: 8px;">
+          <div>
+            <span style="font-size: 11px; color: var(--text-secondary);">License Category</span>
+            <div id="tool-modal-license-category" style="font-weight: 600; font-size: 12px; color: var(--accent-primary); margin-top: 2px;">--</div>
+          </div>
+          <div>
+            <span style="font-size: 11px; color: var(--text-secondary);">Activation Status</span>
+            <div id="tool-modal-activation" style="font-weight: 600; font-size: 12px; color: var(--text-primary); margin-top: 2px;">--</div>
+          </div>
+          <div>
+            <span style="font-size: 11px; color: var(--text-secondary);">Evidence Source</span>
+            <div id="tool-modal-evidence-source" style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">--</div>
+          </div>
+          <div>
+            <span style="font-size: 11px; color: var(--text-secondary);">Verification Method</span>
+            <div id="tool-modal-verification-method" style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">--</div>
+          </div>
+        </div>
+        <div>
+          <span style="font-size: 11px; color: var(--text-secondary);">Metadata Source</span>
+          <div id="tool-modal-source" style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">--</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeToolDetailModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Windows Event Detail Modal -->
+  <div id="event-detail-modal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="event-modal-title" style="font-size: 15px; font-weight: 700; color: var(--text-primary);">Event Details</h3>
+        <button class="icon-btn" onclick="closeEventDetailModal()" style="width: 28px; height: 28px;">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <span id="event-modal-severity" class="badge">--</span>
+          <span id="event-modal-category" class="badge badge-unknown">--</span>
+          <span id="event-modal-time" style="font-size: 11px; color: var(--text-muted);">--</span>
+        </div>
+        <div>
+          <span style="font-size: 11px; color: var(--text-secondary);">Event Message</span>
+          <div id="event-modal-msg" style="font-size: 12px; background: var(--bg-surface); padding: 10px; border-radius: 6px; margin-top: 4px; max-height: 120px; overflow-y: auto; line-height: 1.4;">--</div>
+        </div>
+        <div>
+          <span style="font-size: 11px; color: var(--text-secondary);">Suspected Cause</span>
+          <p id="event-modal-cause" style="font-size: 12px; color: var(--text-primary); margin-top: 2px;">--</p>
+        </div>
+        <div>
+          <span style="font-size: 11px; color: var(--accent-primary); font-weight: 600;">Suggested Diagnostic Steps</span>
+          <p id="event-modal-steps" style="font-size: 12px; color: var(--text-primary); margin-top: 2px;">--</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeEventDetailModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Safe Action Confirmation Modal -->
+  <div id="confirm-action-modal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="confirm-action-title" style="font-size: 15px; font-weight: 700; color: var(--status-warning);">Confirm Safe Action</h3>
+        <button class="icon-btn" onclick="closeConfirmActionModal()" style="width: 28px; height: 28px;">✕</button>
+      </div>
+      <div class="modal-body">
+        <p id="confirm-action-desc" style="font-size: 13px; line-height: 1.5; color: var(--text-primary);">
+          Are you sure you want to proceed with this diagnostic procedure?
+        </p>
+        <div style="background: var(--badge-warning-bg); border-left: 3px solid var(--status-warning); padding: 10px 14px; border-radius: 6px; font-size: 11px; color: var(--status-warning);">
+          TERMINAL BOARD enforces explicit user consent before modifying system state or terminating running processes.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeConfirmActionModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="executeConfirmedAction()">Confirm & Execute</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. License Detail & Compliance Modal -->
+  <div id="license-detail-modal" class="modal-overlay">
+    <div class="modal-box" style="max-width: 640px;">
+      <div class="modal-header">
+        <div>
+          <h3 id="lic-modal-title" style="font-size: 16px; font-weight: 700; color: var(--text-primary);">License Details</h3>
+          <p id="lic-modal-subtitle" style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">--</p>
+        </div>
+        <button class="icon-btn" onclick="closeLicenseDetailModal()" style="width: 28px; height: 28px;">✕</button>
+      </div>
+      <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+        <!-- Status Badges Row -->
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <span id="lic-modal-cat-badge" class="badge">--</span>
+          <span id="lic-modal-status-badge" class="badge">--</span>
+          <span id="lic-modal-activation-badge" class="badge badge-unknown">--</span>
+        </div>
+
+        <!-- Metadata Grid -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: var(--bg-surface); padding: 12px 14px; border-radius: 8px;">
+          <div>
+            <span style="font-size: 11px; color: var(--text-secondary);">Declared License / Identifier</span>
+            <div id="lic-modal-identifier" style="font-weight: 600; font-size: 12px; color: var(--accent-primary); margin-top: 2px;">--</div>
+          </div>
+          <div>
+            <span style="font-size: 11px; color: var(--text-secondary);">Software Category</span>
+            <div id="lic-modal-category" style="font-weight: 600; font-size: 12px; color: var(--text-primary); margin-top: 2px;">--</div>
+          </div>
+          <div>
+            <span style="font-size: 11px; color: var(--text-secondary);">Evidence Source</span>
+            <div id="lic-modal-evidence" style="font-size: 12px; color: var(--text-primary); margin-top: 2px;">--</div>
+          </div>
+          <div>
+            <span style="font-size: 11px; color: var(--text-secondary);">Verification Method</span>
+            <div id="lic-modal-method" style="font-size: 12px; color: var(--text-primary); margin-top: 2px;">--</div>
+          </div>
+        </div>
+
+        <!-- Location & File -->
+        <div>
+          <span style="font-size: 11px; color: var(--text-secondary);">Installation Location</span>
+          <div id="lic-modal-location" style="font-size: 12px; font-family: monospace; background: var(--bg-surface); padding: 6px 10px; border-radius: 6px; margin-top: 2px; word-break: break-all;">--</div>
+        </div>
+        <div>
+          <span style="font-size: 11px; color: var(--text-secondary);">Discovered License / EULA File</span>
+          <div id="lic-modal-file" style="font-size: 12px; font-family: monospace; background: var(--bg-surface); padding: 6px 10px; border-radius: 6px; margin-top: 2px; word-break: break-all;">--</div>
+        </div>
+
+        <!-- License Snippet Preview if present -->
+        <div id="lic-modal-preview-container" style="display: none;">
+          <span style="font-size: 11px; color: var(--accent-primary); font-weight: 600;">Discovered License File Content Preview</span>
+          <pre id="lic-modal-preview-text" style="font-size: 11px; font-family: monospace; background: var(--code-bg); padding: 10px; border-radius: 6px; margin-top: 4px; max-height: 120px; overflow-y: auto; white-space: pre-wrap; line-height: 1.4; color: var(--text-primary);"></pre>
+        </div>
+
+        <!-- Explanation & Analysis -->
+        <div>
+          <span style="font-size: 11px; color: var(--text-secondary); font-weight: 600;">Status Explanation & Analysis</span>
+          <div id="lic-modal-reason" style="font-size: 12px; color: var(--text-primary); background: var(--bg-surface); padding: 10px 12px; border-radius: 6px; margin-top: 4px; line-height: 1.4; border-left: 3px solid var(--accent-primary);">--</div>
+        </div>
+
+        <!-- User Compliance Notes -->
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <label class="form-label" style="font-weight: 600; color: var(--text-primary);">Manual User Compliance Records</label>
+            <span style="font-size: 11px; color: var(--text-muted);">Saved to local database</span>
+          </div>
+          <textarea id="lic-modal-notes-input" class="form-input" rows="3" placeholder="Enter custom organizational compliance references (e.g. PO invoice number, enterprise license grant, or legal department sign-off)..."></textarea>
+          <div style="display: flex; justify-content: flex-end; margin-top: 8px;">
+            <button class="btn btn-primary" onclick="saveCurrentComplianceNote()">Save Compliance Note</button>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border-subtle); padding-top: 10px;">
+          <span>Audited by TERMINAL BOARD Engine</span>
+          <span id="lic-modal-time">Last audited: --</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeLicenseDetailModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manual Subscription / License Record Modal -->
+  <div id="manual-license-modal" class="modal-overlay">
+    <div class="modal-box" style="max-width: 580px;">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title" id="manual-lic-modal-title">Add Manual Subscription or License Record</h3>
+          <p class="modal-subtitle" style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">Record enterprise grants, subscriptions, purchase orders, or cloud licenses</p>
+        </div>
+        <button class="icon-btn" onclick="closeManualLicenseModal()" style="width: 28px; height: 28px;">✕</button>
+      </div>
+      <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px; max-height: 70vh; overflow-y: auto;">
+        <input type="hidden" id="manual-lic-id" value="">
+        <div>
+          <label class="form-label" style="font-size: 12px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; display: block;">Application / Service Name *</label>
+          <input type="text" id="manual-lic-name" class="form-input" placeholder="e.g. Adobe Creative Cloud, JetBrains All Products, Windows Server CAL" required>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div>
+            <label class="form-label" style="font-size: 12px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; display: block;">Publisher / Vendor</label>
+            <input type="text" id="manual-lic-publisher" class="form-input" placeholder="e.g. Adobe Inc., JetBrains, Microsoft">
+          </div>
+          <div>
+            <label class="form-label" style="font-size: 12px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; display: block;">License Category</label>
+            <select id="manual-lic-category" class="form-input">
+              <option value="Subscription">Subscription (SaaS / Seat)</option>
+              <option value="Commercial">Commercial (Perpetual / Key)</option>
+              <option value="Enterprise Volume">Enterprise Volume (EA / MPSA)</option>
+              <option value="Cloud Service">Cloud Service</option>
+              <option value="Freeware">Freeware / Community</option>
+              <option value="Open Source">Open Source (Internal)</option>
+            </select>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div>
+            <label class="form-label" style="font-size: 12px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; display: block;">Expiry / Renewal Date</label>
+            <input type="date" id="manual-lic-expiry" class="form-input">
+          </div>
+          <div>
+            <label class="form-label" style="font-size: 12px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; display: block;">Reminder Alert</label>
+            <select id="manual-lic-reminder" class="form-input">
+              <option value="30">30 days before expiry</option>
+              <option value="14">14 days before expiry</option>
+              <option value="7">7 days before expiry</option>
+              <option value="60">60 days before expiry</option>
+              <option value="90">90 days before expiry</option>
+              <option value="0">On expiry day only</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="form-label" style="font-size: 12px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; display: block;">PO / Order / License Reference (No Secret Keys)</label>
+          <input type="text" id="manual-lic-ref" class="form-input" placeholder="e.g. PO-2026-88192, Sub-ID 99421, Last 5 Chars: ...">
+        </div>
+        <div>
+          <label class="form-label" style="font-size: 12px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; display: block;">Compliance & Entitlement Notes</label>
+          <textarea id="manual-lic-notes" class="form-input" rows="3" placeholder="Enter licensing terms, department owner, seat count, or compliance verification notes..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer" style="display: flex; justify-content: space-between;">
+        <button type="button" class="btn btn-danger" id="manual-lic-del-btn" style="display: none;" onclick="deleteCurrentManualLicense()">Delete Record</button>
+        <div style="display: flex; gap: 10px; margin-left: auto;">
+          <button type="button" class="btn" onclick="closeManualLicenseModal()">Cancel</button>
+          <button type="button" class="btn btn-primary" onclick="saveManualLicenseRecord()">Save Record</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Driver Detail Modal -->
+  <div id="driver-detail-modal" class="modal-overlay">
+    <div class="modal-box" style="max-width: 620px;">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title" id="driver-modal-name">Device Name</h3>
+          <p class="modal-subtitle" id="driver-modal-class" style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">Device Class</p>
+        </div>
+        <button class="icon-btn" onclick="closeDriverDetailModal()" style="width: 28px; height: 28px;">✕</button>
+      </div>
+      <div class="modal-body" style="max-height: 70vh; overflow-y: auto; display: flex; flex-direction: column; gap: 14px;">
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <span id="driver-modal-health-badge" class="badge">--</span>
+          <span id="driver-modal-problem-badge" class="badge badge-unknown">--</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: var(--bg-surface); padding: 12px 14px; border-radius: 8px;">
+          <div>
+            <span style="font-size: 11px; color: var(--text-secondary);">Driver Provider / Vendor</span>
+            <div id="driver-modal-provider" style="font-weight: 600; font-size: 12px; color: var(--text-primary); margin-top: 2px;">--</div>
+          </div>
+          <div>
+            <span style="font-size: 11px; color: var(--text-secondary);">Driver Version</span>
+            <div id="driver-modal-version" style="font-weight: 600; font-size: 12px; color: var(--accent-primary); margin-top: 2px;">--</div>
+          </div>
+          <div>
+            <span style="font-size: 11px; color: var(--text-secondary);">Driver Date</span>
+            <div id="driver-modal-date" style="font-size: 12px; color: var(--text-primary); margin-top: 2px;">--</div>
+          </div>
+          <div>
+            <span style="font-size: 11px; color: var(--text-secondary);">INF File</span>
+            <div id="driver-modal-inf" style="font-size: 12px; font-family: monospace; color: var(--text-primary); margin-top: 2px;">--</div>
+          </div>
+        </div>
+        <div>
+          <span style="font-size: 11px; color: var(--text-secondary);">Device Instance ID (PnP)</span>
+          <div id="driver-modal-instance-id" style="font-size: 11px; font-family: monospace; background: var(--bg-surface); padding: 6px 10px; border-radius: 6px; margin-top: 2px; word-break: break-all;">--</div>
+        </div>
+        <div>
+          <span style="font-size: 11px; color: var(--text-secondary); font-weight: 600;">Windows Health Analysis & Problem Description</span>
+          <div id="driver-modal-reason" style="font-size: 12px; color: var(--text-primary); background: var(--bg-surface); padding: 10px 12px; border-radius: 6px; margin-top: 4px; line-height: 1.4; border-left: 3px solid var(--accent-primary);">--</div>
+        </div>
+        <div>
+          <span style="font-size: 11px; color: var(--text-secondary); font-weight: 600;">Remediation & Recommended Step</span>
+          <div id="driver-modal-remediation" style="font-size: 12px; color: var(--text-primary); background: var(--bg-surface); padding: 10px 12px; border-radius: 6px; margin-top: 4px; line-height: 1.4;">--</div>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border-subtle); padding-top: 10px;">
+          <span>Source: Windows Registry PnP & Driver Catalog (Read-Only)</span>
+          <span id="driver-modal-updated">--</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeDriverDetailModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. Email Report Preview Modal -->
+  <div id="email-preview-modal" class="modal-overlay">
+    <div class="modal-box" style="max-width: 900px; width: 92vw; max-height: 90vh; display: flex; flex-direction: column;">
+      <div class="modal-header">
+        <div>
+          <h3 style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0;">
+            Daily Full-System Diagnostic Report Preview
+          </h3>
+          <p id="email-preview-subject" style="font-size: 12px; color: var(--text-secondary); margin: 2px 0 0 0;">
+            TERMINAL BOARD Daily Diagnostic Report
+          </p>
+        </div>
+        <button class="icon-btn" onclick="closeEmailPreviewModal()" style="width: 28px; height: 28px;">✕</button>
+      </div>
+
+      <div style="display: flex; gap: 8px; align-items: center; padding: 8px 16px; background: var(--bg-surface-alt); border-bottom: 1px solid var(--border-subtle); font-size: 12px;">
+        <span style="font-weight: 600; color: var(--text-secondary);">Attachments:</span>
+        <div id="email-preview-attachments" style="display: flex; gap: 6px; flex-wrap: wrap;"></div>
+      </div>
+
+      <div class="modal-body" style="flex: 1; padding: 0; overflow: hidden; background: #0F172A;">
+        <iframe id="email-preview-iframe" style="width: 100%; height: 500px; border: none; background: #0F172A;" sandbox="allow-same-origin"></iframe>
+      </div>
+
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="font-size: 11px; color: var(--text-muted);">
+          Recipient: <strong id="email-preview-recipient-label" style="color: var(--accent-primary);">karthikeyansa369@gmail.com</strong>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button class="btn" onclick="closeEmailPreviewModal()">Close Preview</button>
+          <button class="btn btn-primary" onclick="sendDailyReportNow()">Send Report Now</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dynamic Toast Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+
+  <!-- Scripts -->
+  <script src="js/icons.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
