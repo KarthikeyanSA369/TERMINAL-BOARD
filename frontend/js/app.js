@@ -351,12 +351,98 @@ window.addEventListener("DOMContentLoaded", async () => {
   }
 });
 
+// Sidebar Drawer Controls
+function openSidebar() {
+  const sidebar = document.getElementById("sidebar") || document.querySelector(".sidebar");
+  const overlay = document.getElementById("sidebar-overlay");
+  const toggleBtn = document.getElementById("sidebar-toggle-btn");
+  if (sidebar) sidebar.classList.add("open");
+  if (overlay) overlay.classList.add("active");
+  if (toggleBtn) {
+    toggleBtn.setAttribute("aria-expanded", "true");
+    toggleBtn.classList.add("active");
+  }
+}
+
+function closeSidebar() {
+  const sidebar = document.getElementById("sidebar") || document.querySelector(".sidebar");
+  const overlay = document.getElementById("sidebar-overlay");
+  const toggleBtn = document.getElementById("sidebar-toggle-btn");
+  if (sidebar) sidebar.classList.remove("open");
+  if (overlay) overlay.classList.remove("active");
+  if (toggleBtn) {
+    toggleBtn.setAttribute("aria-expanded", "false");
+    toggleBtn.classList.remove("active");
+  }
+}
+
+function toggleSidebar() {
+  const sidebar = document.getElementById("sidebar") || document.querySelector(".sidebar");
+  if (sidebar && sidebar.classList.contains("open")) {
+    closeSidebar();
+  } else {
+    openSidebar();
+  }
+}
+
+window.openSidebar = openSidebar;
+window.closeSidebar = closeSidebar;
+window.toggleSidebar = toggleSidebar;
+
 // Routing & Navigation
 function setupNavigation() {
+  // Sidebar toggle button (header)
+  const sidebarToggle = document.getElementById("sidebar-toggle-btn");
+  if (sidebarToggle) {
+    sidebarToggle.addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggleSidebar();
+    });
+  }
+
+  // Sidebar close button (inside sidebar brand)
+  const sidebarClose = document.getElementById("sidebar-close-btn");
+  if (sidebarClose) {
+    sidebarClose.addEventListener("click", (e) => {
+      e.stopPropagation();
+      closeSidebar();
+    });
+  }
+
+  // Click outside sidebar (overlay)
+  const sidebarOverlay = document.getElementById("sidebar-overlay");
+  if (sidebarOverlay) {
+    sidebarOverlay.addEventListener("click", () => {
+      closeSidebar();
+    });
+  }
+
+  // Click outside sidebar anywhere in document
+  document.addEventListener("click", (e) => {
+    const sidebar = document.getElementById("sidebar") || document.querySelector(".sidebar");
+    const toggleBtn = document.getElementById("sidebar-toggle-btn");
+    if (sidebar && sidebar.classList.contains("open")) {
+      if (!sidebar.contains(e.target) && (!toggleBtn || !toggleBtn.contains(e.target))) {
+        closeSidebar();
+      }
+    }
+  });
+
+  // Escape key closes sidebar and active modals
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      closeSidebar();
+      closeHardwareSubsystemModal();
+      document.querySelectorAll(".modal-overlay.active").forEach(m => m.classList.remove("active"));
+    }
+  });
+
+  // Nav items click: navigate and close immediately
   document.querySelectorAll(".nav-item").forEach(item => {
     item.addEventListener("click", () => {
       const target = item.getAttribute("data-page");
       navigate(target);
+      closeSidebar();
     });
   });
 
@@ -404,6 +490,8 @@ function setupNavigation() {
 }
 
 function navigate(pageId) {
+  closeSidebar();
+
   if (pageId === "drivers" || pageId === "hardware_drivers") {
     navigate("system_health");
     switchSystemHealthTab("drivers");
@@ -584,19 +672,59 @@ async function renderDashboard(isSilent = false) {
   const cpuSpark = document.getElementById("dash-cpu-sparkline");
   if (cpuSpark) cpuSpark.innerHTML = createSparkline(cpu.history, 150, 36, cpu.percent > 85 ? 'var(--status-critical)' : null);
 
-  // DISK Card
-  const disks = data.metrics.disks;
-  const primaryDisk = disks && disks.length > 0 ? disks[0] : null;
-  if (primaryDisk) {
-    document.getElementById("dash-disk-percent").textContent = `${primaryDisk.percent_used}%`;
-    document.getElementById("dash-disk-details").textContent = `${primaryDisk.free_formatted} Free of ${primaryDisk.total_formatted}`;
-    document.getElementById("dash-disk-mount").textContent = `Volume ${primaryDisk.mountpoint} (${primaryDisk.fstype})`;
-    const diskBar = document.getElementById("dash-disk-bar");
-    diskBar.style.width = `${primaryDisk.percent_used}%`;
-    diskBar.className = `progress-fill ${primaryDisk.percent_used > 90 ? 'critical' : (primaryDisk.percent_used > 80 ? 'warning' : 'healthy')}`;
-  } else {
-    document.getElementById("dash-disk-percent").textContent = "N/A";
-    document.getElementById("dash-disk-details").textContent = "No disk partitions detected";
+  // DISK Card — Render all available logical disk partitions
+  const disks = data.metrics.disks || [];
+  const diskListContainer = document.getElementById("dash-disk-partitions-list");
+  if (diskListContainer) {
+    if (disks.length > 0) {
+      diskListContainer.innerHTML = disks.map((d, idx) => {
+        const pct = typeof d.percent_used === "number" ? d.percent_used : 0;
+        const statusClass = pct > 90 ? 'critical' : (pct > 80 ? 'warning' : 'healthy');
+        const fsBadge = d.fstype ? `<span style="font-size: 10px; opacity: 0.85; background: var(--bg-surface); padding: 1px 5px; border-radius: 3px; border: 1px solid var(--border-subtle);">${escapeHtml(d.fstype)}</span>` : "";
+        const labelText = d.label ? ` (${escapeHtml(d.label)})` : "";
+        const driveName = `${escapeHtml(d.drive_letter || d.mountpoint || "Drive")}${labelText}`;
+        const isLast = idx === disks.length - 1;
+
+        return `
+          <div class="partition-item" style="${isLast ? '' : 'border-bottom: 1px solid var(--border-subtle);'} padding-bottom: ${isLast ? '0' : '8px'}; margin-bottom: ${isLast ? '0' : '4px'};">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 3px;">
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <strong style="font-size: 13px; color: var(--text-primary);">${driveName}</strong>
+                ${fsBadge}
+              </div>
+              <span style="font-size: 13px; font-weight: 700; color: var(--text-primary);">${pct}%</span>
+            </div>
+            <div class="progress-track" style="height: 6px; margin: 4px 0;">
+              <div class="progress-fill ${statusClass}" style="width: ${Math.min(100, Math.max(0, pct))}%;"></div>
+            </div>
+            <div class="metric-subtext" style="font-size: 10.5px;">
+              <span>${escapeHtml(d.total_formatted || "--")} total | ${escapeHtml(d.free_formatted || "--")} free</span>
+              <span>${escapeHtml(d.used_formatted || "--")} used</span>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      // Update legacy elements if present for backward compatibility
+      const primaryDisk = disks[0];
+      const pPercent = document.getElementById("dash-disk-percent");
+      if (pPercent) pPercent.textContent = `${primaryDisk.percent_used}%`;
+      const pDetails = document.getElementById("dash-disk-details");
+      if (pDetails) pDetails.textContent = `${primaryDisk.free_formatted} Free of ${primaryDisk.total_formatted}`;
+      const pMount = document.getElementById("dash-disk-mount");
+      if (pMount) pMount.textContent = `Volume ${primaryDisk.mountpoint} (${primaryDisk.fstype})`;
+      const pBar = document.getElementById("dash-disk-bar");
+      if (pBar) {
+        pBar.style.width = `${primaryDisk.percent_used}%`;
+        pBar.className = `progress-fill ${primaryDisk.percent_used > 90 ? 'critical' : (primaryDisk.percent_used > 80 ? 'warning' : 'healthy')}`;
+      }
+    } else {
+      diskListContainer.innerHTML = `
+        <div style="padding: 12px 0; text-align: center; color: var(--text-secondary); font-size: 12px;">
+          No disk partitions detected
+        </div>
+      `;
+    }
   }
 
   // BATTERY Card
@@ -896,12 +1024,13 @@ function filterDriversTable() {
     return;
   }
 
-  tbody.innerHTML = filtered.map(d => {
+  tbody.innerHTML = filtered.map((d, idx) => {
     const healthClass = (d.health_classification || "NOT AVAILABLE").toUpperCase();
     const badgeHealth = healthClass === "HEALTHY" ? "badge-healthy" : (healthClass === "WARNING" ? "badge-warning" : (healthClass === "CRITICAL" ? "badge-critical" : "badge-cryptic"));
-    const safeId = (d.device_id || d.device_instance_id || "").replace(/"/g, '&quot;');
+    const rawId = d.device_id || d.device_instance_id || "";
+    const safeId = escapeHtml(rawId);
     const devName = escapeHtml(d.device_name || 'Not Available');
-    const devId = escapeHtml(d.device_id || d.device_instance_id || 'Not Available');
+    const devId = escapeHtml(rawId || 'Not Available');
     const devClass = escapeHtml(d.device_class || 'Not Available');
     const mfr = escapeHtml(d.manufacturer || 'Not Available');
     const prov = escapeHtml(d.driver_provider || d.provider || 'Not Available');
@@ -928,60 +1057,202 @@ function filterDriversTable() {
           ${d.problem_code && d.problem_code !== 0 && d.problem_code !== "0" ? `<div style="font-size: 10px; color: var(--status-warning);">Code ${escapeHtml(String(d.problem_code))}: ${escapeHtml(d.problem_description || '')}</div>` : ''}
         </td>
         <td>
-          <button class="btn" style="padding: 3px 10px; font-size: 11px;" onclick="openDriverDetailModal('${safeId}')">Inspect</button>
+          <button class="btn btn-inspect-device" style="padding: 3px 10px; font-size: 11px;" data-index="${idx}" data-device-id="${safeId}" onclick="openDriverDetailModal(this.dataset.deviceId, ${idx})">Inspect</button>
         </td>
       </tr>
     `;
   }).join("");
 }
 
-async function openDriverDetailModal(deviceId) {
-  const drivers = state.driverData?.drivers || [];
-  let d = drivers.find(item => item.device_id === deviceId || item.device_instance_id === deviceId);
-  if (!d) {
-    try {
-      const res = await api.call("get_driver_details", deviceId);
-      d = res.driver;
-    } catch (e) {}
-  }
-  if (!d) return;
-
-  state.selectedDriver = d;
-  document.getElementById("driver-modal-name").textContent = d.device_name || "Not Available";
-  document.getElementById("driver-modal-class").textContent = `Class: ${d.device_class || 'Not Available'} | Manufacturer: ${d.manufacturer || 'Not Available'}`;
-
-  const healthClass = (d.health_classification || "NOT AVAILABLE").toUpperCase();
-  const badgeHealth = healthClass === "HEALTHY" ? "badge-healthy" : (healthClass === "WARNING" ? "badge-warning" : (healthClass === "CRITICAL" ? "badge-critical" : "badge-cryptic"));
-  const hBadge = document.getElementById("driver-modal-health-badge");
-  if (hBadge) {
-    hBadge.className = `badge ${badgeHealth}`;
-    hBadge.textContent = `Status: ${healthClass}`;
-  }
-
-  const pBadge = document.getElementById("driver-modal-problem-badge");
-  if (pBadge) {
-    if (d.problem_code && d.problem_code !== 0 && d.problem_code !== "0") {
-      pBadge.className = "badge badge-warning";
-      pBadge.textContent = `PnP Code ${d.problem_code}: ${d.problem_description || 'Issue Detected'}`;
-      pBadge.style.display = "inline-block";
-    } else {
-      pBadge.className = "badge badge-healthy";
-      pBadge.textContent = "CM_PROB_NONE (Code 0)";
-      pBadge.style.display = "inline-block";
-    }
-  }
-
-  document.getElementById("driver-modal-provider").textContent = d.driver_provider || d.provider || "Not Available";
-  document.getElementById("driver-modal-version").textContent = d.driver_version || "Not Available";
-  document.getElementById("driver-modal-date").textContent = d.driver_date || "Not Available";
-  document.getElementById("driver-modal-inf").textContent = d.inf_name || d.inf_path || "Not Available";
-  document.getElementById("driver-modal-instance-id").textContent = d.device_id || d.device_instance_id || "Not Available";
-  document.getElementById("driver-modal-reason").textContent = d.health_reason || d.diagnostic_reason || "Device is working properly according to Windows Plug-and-Play manager.";
-  document.getElementById("driver-modal-remediation").textContent = d.remediation_step || "No repair action needed. Hardware is communicating with operating system.";
-  document.getElementById("driver-modal-updated").textContent = `Last scanned: ${d.last_scanned || d.scanned_at || 'Recent'}`;
-
+async function openDriverDetailModal(deviceId, index) {
   const modal = document.getElementById("driver-detail-modal");
-  if (modal) modal.classList.add("active");
+  const modalBody = document.getElementById("driver-modal-body");
+  const titleEl = document.getElementById("driver-modal-name");
+  const subtitleEl = document.getElementById("driver-modal-class");
+
+  if (!modal) return;
+
+  // 1. Immediately open modal with visible loading state
+  modal.classList.add("active");
+  state.selectedDriver = null;
+
+  if (titleEl) titleEl.textContent = "Inspecting Device...";
+  if (subtitleEl) subtitleEl.textContent = "Querying Windows Plug-and-Play catalog & driver telemetry...";
+
+  const hBadge = document.getElementById("driver-modal-health-badge");
+  const pBadge = document.getElementById("driver-modal-problem-badge");
+  const sBadge = document.getElementById("driver-modal-status-badge");
+  const presBadge = document.getElementById("driver-modal-presence-badge");
+  const signBadge = document.getElementById("driver-modal-signed-badge");
+
+  if (hBadge) { hBadge.className = "badge badge-unknown"; hBadge.textContent = "Loading..."; }
+  if (pBadge) { pBadge.className = "badge badge-unknown"; pBadge.textContent = "Checking PnP code..."; }
+  if (sBadge) { sBadge.className = "badge badge-unknown"; sBadge.textContent = "Status: Inspecting"; }
+  if (presBadge) presBadge.style.display = "none";
+  if (signBadge) signBadge.style.display = "none";
+
+  const provEl = document.getElementById("driver-modal-provider");
+  const verEl = document.getElementById("driver-modal-version");
+  const dateEl = document.getElementById("driver-modal-date");
+  const infEl = document.getElementById("driver-modal-inf");
+  const instEl = document.getElementById("driver-modal-instance-id");
+  const reasonEl = document.getElementById("driver-modal-reason");
+  const remEl = document.getElementById("driver-modal-remediation");
+  const updEl = document.getElementById("driver-modal-updated");
+  const eventsContainer = document.getElementById("driver-modal-events-container");
+  const eventsList = document.getElementById("driver-modal-events-list");
+
+  if (provEl) provEl.textContent = "--";
+  if (verEl) verEl.textContent = "--";
+  if (dateEl) dateEl.textContent = "--";
+  if (infEl) infEl.textContent = "--";
+  if (instEl) instEl.textContent = deviceId || "--";
+  if (reasonEl) reasonEl.textContent = "Retrieving diagnostic telemetry...";
+  if (remEl) remEl.textContent = "--";
+  if (updEl) updEl.textContent = "Inspecting...";
+  if (eventsContainer) eventsContainer.style.display = "none";
+  if (eventsList) eventsList.innerHTML = "";
+
+  try {
+    // 2. Identify driver from state or index
+    const drivers = state.driverData?.drivers || [];
+    let d = null;
+
+    if (typeof index === "number" && drivers[index]) {
+      const cand = drivers[index];
+      if (!deviceId || cand.device_id === deviceId || cand.device_instance_id === deviceId || cand.device_name === deviceId) {
+        d = cand;
+      }
+    }
+
+    if (!d && deviceId) {
+      const normId = String(deviceId).toLowerCase().trim();
+      const cleanNormId = normId.replace(/[\/\\]/g, "");
+      d = drivers.find(item => {
+        const iId = String(item.device_id || item.device_instance_id || "").toLowerCase().trim();
+        const iClean = iId.replace(/[\/\\]/g, "");
+        const iName = String(item.device_name || "").toLowerCase().trim();
+        return iId === normId || iClean === cleanNormId || iName === normId || (normId && (iId.includes(normId) || iClean.includes(cleanNormId)));
+      });
+    }
+
+    // 3. Query backend for real telemetry details and related event log entries
+    let relatedEvents = [];
+    const lookupTarget = deviceId || (d ? (d.device_id || d.device_instance_id || d.device_name) : "");
+    if (lookupTarget) {
+      try {
+        const res = await api.call("get_driver_details", lookupTarget);
+        if (res) {
+          if (res.driver) {
+            d = { ...(d || {}), ...res.driver };
+          }
+          if (Array.isArray(res.related_events)) {
+            relatedEvents = res.related_events;
+          }
+        }
+      } catch (callErr) {
+        console.warn("Backend get_driver_details lookup notice:", callErr);
+      }
+    }
+
+    // 4. Empty-data check
+    if (!d) {
+      if (titleEl) titleEl.textContent = "Device Telemetry Unavailable";
+      if (subtitleEl) subtitleEl.textContent = "No matching device record located in active catalog.";
+      if (reasonEl) {
+        reasonEl.textContent = `No telemetry record discovered for device identifier: ${deviceId || 'Unknown'}. The hardware device may have been disconnected or removed.`;
+      }
+      if (remEl) {
+        remEl.textContent = "Click 'Rescan Drivers' on the Hardware & Process Health page to refresh the active Windows PnP catalog.";
+      }
+      if (hBadge) { hBadge.className = "badge badge-unknown"; hBadge.textContent = "NOT AVAILABLE"; }
+      if (pBadge) { pBadge.style.display = "none"; }
+      if (sBadge) { sBadge.style.display = "none"; }
+      return;
+    }
+
+    // 5. Populate real telemetry details
+    state.selectedDriver = d;
+
+    if (titleEl) titleEl.textContent = d.device_name || "Hardware Device";
+    if (subtitleEl) subtitleEl.textContent = `Category: ${d.device_class || 'System'} | Manufacturer: ${d.manufacturer || 'Not Available'}`;
+
+    const healthClass = (d.health_classification || "NOT AVAILABLE").toUpperCase();
+    const badgeHealth = healthClass === "HEALTHY" ? "badge-healthy" : (healthClass === "WARNING" ? "badge-warning" : (healthClass === "CRITICAL" ? "badge-critical" : "badge-cryptic"));
+
+    if (hBadge) {
+      hBadge.className = `badge ${badgeHealth}`;
+      hBadge.textContent = `Health: ${healthClass}`;
+      hBadge.style.display = "inline-block";
+    }
+
+    if (pBadge) {
+      if (d.problem_code && d.problem_code !== 0 && d.problem_code !== "0") {
+        pBadge.className = "badge badge-warning";
+        pBadge.textContent = `PnP Code ${d.problem_code}: ${d.problem_description || d.problem_name || 'Issue Reported'}`;
+        pBadge.style.display = "inline-block";
+      } else {
+        pBadge.className = "badge badge-healthy";
+        pBadge.textContent = "CM_PROB_NONE (Code 0)";
+        pBadge.style.display = "inline-block";
+      }
+    }
+
+    if (sBadge) {
+      sBadge.className = (d.status === "OK" || !d.status) ? "badge badge-healthy" : "badge badge-warning";
+      sBadge.textContent = `PnP Status: ${d.status || 'OK'}`;
+      sBadge.style.display = "inline-block";
+    }
+
+    if (presBadge) {
+      const isPresent = d.is_present !== false;
+      presBadge.className = isPresent ? "badge badge-healthy" : "badge badge-warning";
+      presBadge.textContent = isPresent ? "Present (Connected)" : "Disconnected";
+      presBadge.style.display = "inline-block";
+    }
+
+    if (signBadge) {
+      const isSigned = d.is_signed !== false;
+      signBadge.className = isSigned ? "badge badge-healthy" : "badge badge-warning";
+      signBadge.textContent = isSigned ? "Digitally Signed" : "Unsigned / Unverified";
+      signBadge.style.display = "inline-block";
+    }
+
+    if (provEl) provEl.textContent = d.driver_provider || d.provider || "Not Available";
+    if (verEl) verEl.textContent = d.driver_version || "Not Available";
+    if (dateEl) dateEl.textContent = d.driver_date || "Not Available";
+    if (infEl) infEl.textContent = d.inf_name || d.inf_path || "Not Available";
+    if (instEl) instEl.textContent = d.device_id || d.device_instance_id || "Not Available";
+    if (reasonEl) reasonEl.textContent = d.health_reason || d.diagnostic_reason || "Device is communicating properly with Windows Plug-and-Play manager.";
+    if (remEl) remEl.textContent = d.remediation_step || "No repair action needed. Hardware is communicating with operating system.";
+    if (updEl) updEl.textContent = `Last inspected: ${d.last_scanned || d.scanned_at || new Date().toLocaleString()}`;
+
+    // 6. Render Related Windows Events if present
+    if (eventsContainer && eventsList) {
+      if (relatedEvents && relatedEvents.length > 0) {
+        eventsContainer.style.display = "block";
+        eventsList.innerHTML = relatedEvents.map(ev => `
+          <div style="background: var(--bg-surface); padding: 8px 12px; border-radius: 6px; font-size: 11px; border-left: 3px solid ${ev.severity === 'Critical' ? 'var(--status-critical)' : 'var(--status-warning)'};">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+              <strong style="color: var(--text-primary);">${escapeHtml(ev.source || 'Windows')} Event ${ev.event_id || ''}</strong>
+              <span style="color: var(--text-muted); font-size: 10px;">${escapeHtml(ev.time_generated || '')}</span>
+            </div>
+            <p style="color: var(--text-secondary); margin: 0; line-height: 1.3;">${escapeHtml(ev.message || '')}</p>
+          </div>
+        `).join("");
+      } else {
+        eventsContainer.style.display = "none";
+        eventsList.innerHTML = "";
+      }
+    }
+  } catch (err) {
+    console.error("Error inspecting device details:", err);
+    if (titleEl) titleEl.textContent = "Error Inspecting Device";
+    if (subtitleEl) subtitleEl.textContent = "An error occurred while loading hardware telemetry.";
+    if (reasonEl) reasonEl.textContent = `Diagnostic Inspection Error: ${err.message || String(err)}`;
+    if (remEl) remEl.textContent = "Please verify system permissions and retry.";
+    if (hBadge) { hBadge.className = "badge badge-critical"; hBadge.textContent = "ERROR"; }
+  }
 }
 
 function closeDriverDetailModal() {
@@ -989,6 +1260,16 @@ function closeDriverDetailModal() {
   if (modal) modal.classList.remove("active");
   state.selectedDriver = null;
 }
+
+// Global keyboard accessibility: Escape closes active modals
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    const driverModal = document.getElementById("driver-detail-modal");
+    if (driverModal && driverModal.classList.contains("active")) {
+      closeDriverDetailModal();
+    }
+  }
+});
 
 async function exportDriverReport(fmt) {
   try {
@@ -2284,6 +2565,7 @@ async function renderHardwareDiagnostics() {
 }
 
 function renderHardwareReportData(report) {
+  state.hardwareReport = report;
   const meta = report.report_metadata || {};
   const exec = report.section_1_executive_summary || {};
   const findings = report.section_15_rule_based_fault_correlation || [];
@@ -2381,7 +2663,7 @@ function renderHardwareReportData(report) {
       const evList = (assessment.evidence || []).map(ev => `<li>${escapeHtml(ev)}</li>`).join("");
 
       return `
-        <div class="card" style="display: flex; flex-direction: column; justify-content: space-between; gap: 10px; background: var(--bg-surface);">
+        <div class="card hw-subsystem-card" onclick="openHardwareSubsystemModal('${sub.key}')" title="Click to view detailed ${escapeHtml(sub.label)} diagnostics" style="display: flex; flex-direction: column; justify-content: space-between; gap: 10px; background: var(--bg-surface);">
           <div>
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px;">
               <strong style="font-size: 13px; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
@@ -2393,9 +2675,14 @@ function renderHardwareReportData(report) {
           </div>
           <div>
             <div style="font-size: 10px; color: var(--accent-primary); text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">Telemetry & Evidence:</div>
-            <ul style="font-size: 11px; color: var(--text-muted); margin: 0 0 0 16px; padding: 0; max-height: 120px; overflow-y: auto;">
+            <ul style="font-size: 11px; color: var(--text-muted); margin: 0 0 0 16px; padding: 0; max-height: 90px; overflow-y: auto;">
               ${evList}
             </ul>
+            <div style="display: flex; justify-content: flex-end; align-items: center; margin-top: 8px; border-top: 1px dashed var(--border-subtle); padding-top: 6px;">
+              <span style="font-size: 11px; color: var(--accent-primary); font-weight: 600;">
+                Click for detailed view &rarr;
+              </span>
+            </div>
           </div>
         </div>
       `;
@@ -2588,4 +2875,663 @@ function closeCompatibilityMatrixModal() {
   const modal = document.getElementById("compatibility-matrix-modal");
   if (modal) modal.classList.remove("modal-open");
 }
+
+// ---------------------------------------------------------------------------
+// Hardware Subsystem Clickable Detailed View Modal
+// ---------------------------------------------------------------------------
+
+async function openHardwareSubsystemModal(subKey) {
+  const modal = document.getElementById("hw-subsystem-modal");
+  if (!modal) return;
+
+  modal.classList.add("active");
+  const modalBody = document.getElementById("hw-subsystem-modal-body");
+  if (!modalBody) return;
+
+  if (state.hardwareReport) {
+    renderHardwareSubsystemDetails(subKey, state.hardwareReport);
+  } else {
+    modalBody.innerHTML = `
+      <div style="text-align: center; padding: 36px 20px; color: var(--text-secondary);">
+        <div class="pulse-dot" style="margin: 0 auto 12px auto; width: 14px; height: 14px;"></div>
+        <div style="font-size: 13px; font-weight: 600;">Querying verified hardware telemetry...</div>
+        <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Reading physical subsystem diagnostic counters</div>
+      </div>
+    `;
+    try {
+      const report = await api.call("get_latest_hardware_report");
+      if (report) {
+        state.hardwareReport = report;
+        renderHardwareSubsystemDetails(subKey, report);
+      } else {
+        modalBody.innerHTML = `
+          <div style="color: var(--status-warning); padding: 24px; text-align: center; font-size: 13px;">
+            No hardware diagnostic report is currently loaded. Please run a scan from the main view.
+          </div>
+        `;
+      }
+    } catch (err) {
+      modalBody.innerHTML = `
+        <div style="color: var(--status-critical); padding: 24px; text-align: center; font-size: 13px;">
+          Failed to load subsystem details: ${escapeHtml(String(err))}
+        </div>
+      `;
+    }
+  }
+}
+
+function closeHardwareSubsystemModal() {
+  const modal = document.getElementById("hw-subsystem-modal");
+  if (modal) modal.classList.remove("active");
+}
+
+function renderHardwareSubsystemDetails(subKey, report) {
+  const sec = report[subKey] || {};
+  const telemetry = sec.telemetry || {};
+  const assessment = sec.assessment || {};
+  const stat = assessment.health_status || "HEALTHY";
+  const statBadge = stat === "CRITICAL" ? "badge-critical" : (stat === "WARNING" ? "badge-warning" : (stat === "NOT AVAILABLE" ? "badge-unknown" : "badge-healthy"));
+
+  const titles = {
+    section_4_cpu_diagnostics: { title: "CPU / Processor", sub: "Architecture, Frequency, Cores & Thermal Throttling" },
+    section_5_ram_diagnostics: { title: "RAM / Physical Memory", sub: "Capacity, Utilization, Swap & Installed Modules" },
+    section_6_storage_diagnostics: { title: "Storage Devices & Partitions", sub: "Physical Disks, Media Types & Logical Partitions" },
+    section_7_gpu_diagnostics: { title: "GPU / Graphics Controllers", sub: "Dedicated/Integrated Adapters, VRAM & Drivers" },
+    section_8_motherboard_and_firmware: { title: "Motherboard & BIOS / UEFI", sub: "Platform Hardware, BIOS Version & Release Date" },
+    section_9_cooling_and_temperature_analysis: { title: "Cooling & Thermal Diagnostics", sub: "Sensor Interface, Fan Speeds & Thermal Readings" },
+    section_10_battery_health: { title: "Battery Health & Power System", sub: "Design vs Full Capacity, Wear Level & Power State" },
+    section_11_network_adapter_diagnostics: { title: "Network Devices & Adapters", sub: "Physical & Virtual Interfaces, Link Speeds & MACs" },
+    section_12_additional_device_inventory: { title: "Additional Devices & Peripherals", sub: "Audio Controllers, Monitors, USB & Input Devices" }
+  };
+
+  const info = titles[subKey] || { title: "Hardware Subsystem", sub: "Physical Telemetry Assessment" };
+  const titleEl = document.getElementById("hw-subsystem-modal-title");
+  const subEl = document.getElementById("hw-subsystem-modal-subtitle");
+  const badgeEl = document.getElementById("hw-subsystem-modal-badge");
+  const modalBody = document.getElementById("hw-subsystem-modal-body");
+
+  if (titleEl) titleEl.textContent = info.title;
+  if (subEl) subEl.textContent = info.sub;
+  if (badgeEl) {
+    badgeEl.textContent = stat;
+    badgeEl.className = `badge ${statBadge}`;
+  }
+  if (!modalBody) return;
+
+  const reasons = assessment.reasons && assessment.reasons.length > 0
+    ? assessment.reasons.join(" • ")
+    : "Subsystem operating normally within expected parameters.";
+  const evList = (assessment.evidence || []).map(ev => `<li>${escapeHtml(ev)}</li>`).join("");
+
+  let specificHtml = "";
+
+  if (subKey === "section_4_cpu_diagnostics") {
+    const tempVal = telemetry.temperature_c !== null && telemetry.temperature_c !== undefined
+      ? `${telemetry.temperature_c} °C`
+      : (telemetry.temperature_status || "Unavailable (requires admin or OEM EC driver)");
+    const throttVal = telemetry.thermal_throttling
+      ? "YES (Active Throttling)"
+      : (telemetry.throttling_status || "Inactive / Normal");
+
+    let perCoreHtml = "";
+    if (Array.isArray(telemetry.per_core_utilization) && telemetry.per_core_utilization.length > 0) {
+      perCoreHtml = `
+        <div style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 12px; margin-top: 8px;">
+          <div class="hw-prop-label" style="margin-bottom: 8px;">Per-Core Utilization:</div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px;">
+            ${telemetry.per_core_utilization.map((c, i) => `
+              <div style="background: var(--bg-card); padding: 6px 10px; border-radius: 4px; border: 1px solid var(--border-subtle); font-size: 11px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                  <span>Core ${i}</span>
+                  <strong>${c}%</strong>
+                </div>
+                <div class="progress-track" style="height: 4px;">
+                  <div class="progress-fill ${c > 85 ? 'critical' : (c > 70 ? 'warning' : 'healthy')}" style="width: ${c}%;"></div>
+                </div>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+      `;
+    }
+
+    specificHtml = `
+      <div class="hw-detail-grid">
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Processor Name</span>
+          <span class="hw-prop-val">${escapeHtml(telemetry.model || "Not Available")}</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Manufacturer</span>
+          <span class="hw-prop-val">${escapeHtml(telemetry.manufacturer || "Not Available")}</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Physical Cores</span>
+          <span class="hw-prop-val">${telemetry.physical_cores ?? "Not Available"}</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Logical Processors</span>
+          <span class="hw-prop-val">${telemetry.logical_processors ?? "Not Available"}</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Current Clock</span>
+          <span class="hw-prop-val">${telemetry.current_frequency_mhz ? `${telemetry.current_frequency_mhz} MHz` : "Not Available"}</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Max Clock</span>
+          <span class="hw-prop-val">${telemetry.max_frequency_mhz ? `${telemetry.max_frequency_mhz} MHz` : "Not Available"}</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Architecture</span>
+          <span class="hw-prop-val">${escapeHtml(telemetry.architecture || "Not Available")}</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Socket Designation</span>
+          <span class="hw-prop-val">${escapeHtml(telemetry.socket_designation || "Not Available")}</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Thermal Temperature</span>
+          <span class="hw-prop-val" style="color: ${telemetry.temperature_c ? (telemetry.temperature_c > 85 ? 'var(--status-critical)' : 'var(--status-healthy)') : 'var(--text-secondary)'};">${escapeHtml(String(tempVal))}</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Thermal Throttling</span>
+          <span class="hw-prop-val" style="color: ${telemetry.thermal_throttling ? 'var(--status-critical)' : 'var(--text-primary)'};">${escapeHtml(String(throttVal))}</span>
+        </div>
+      </div>
+      ${perCoreHtml}
+    `;
+  } else if (subKey === "section_5_ram_diagnostics") {
+    const modules = telemetry.installed_modules || [];
+    let modHtml = "";
+    if (modules.length > 0) {
+      modHtml = `
+        <div style="margin-top: 10px;">
+          <div class="hw-prop-label" style="margin-bottom: 6px;">Detected Memory Modules (SPD):</div>
+          <table class="hw-subsystem-table">
+            <thead>
+              <tr>
+                <th>Slot / Bank</th>
+                <th>Capacity</th>
+                <th>Speed</th>
+                <th>Manufacturer</th>
+                <th>Part Number</th>
+                <th>Form Factor</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${modules.map(m => `
+                <tr>
+                  <td><strong>${escapeHtml(m.bank_label || m.device_locator || "DIMM")}</strong></td>
+                  <td>${escapeHtml(m.capacity_formatted || format_bytes(m.capacity_bytes) || "Not Available")}</td>
+                  <td>${m.speed_mhz ? `${m.speed_mhz} MHz` : "Not Available"}</td>
+                  <td>${escapeHtml(m.manufacturer || "Not Available")}</td>
+                  <td><code style="font-size: 11px;">${escapeHtml(m.part_number || "Not Available")}</code></td>
+                  <td>${escapeHtml(m.form_factor || "DIMM")}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+      `;
+    } else {
+      modHtml = `
+        <div style="font-size: 11px; color: var(--text-muted); background: var(--bg-surface); padding: 8px 12px; border-radius: 4px; margin-top: 8px;">
+          Physical memory module SPD details require administrative elevation on Windows. Total memory allocation is verified via system performance counters.
+        </div>
+      `;
+    }
+
+    specificHtml = `
+      <div class="hw-detail-grid">
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Total Memory</span>
+          <span class="hw-prop-val">${escapeHtml(telemetry.total_formatted || "Not Available")}</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Available Memory</span>
+          <span class="hw-prop-val" style="color: var(--status-healthy);">${escapeHtml(telemetry.available_formatted || "Not Available")}</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Used Memory</span>
+          <span class="hw-prop-val">${escapeHtml(telemetry.used_formatted || "Not Available")}</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Usage Percentage</span>
+          <span class="hw-prop-val">${telemetry.utilization_percent ?? 0}%</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Swap / Pagefile Total</span>
+          <span class="hw-prop-val">${escapeHtml(telemetry.swap_total_formatted || "Not Available")}</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Swap Used</span>
+          <span class="hw-prop-val">${escapeHtml(telemetry.swap_used_formatted || "Not Available")}</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Swap Utilization</span>
+          <span class="hw-prop-val">${telemetry.swap_utilization_percent ?? 0}%</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Physical Slots</span>
+          <span class="hw-prop-val">${telemetry.total_slots ?? "Not Available"}</span>
+        </div>
+      </div>
+      <div style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 12px; margin-top: 8px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 11px;">
+          <span class="hw-prop-label">Physical RAM Utilization</span>
+          <strong>${telemetry.utilization_percent ?? 0}%</strong>
+        </div>
+        <div class="progress-track" style="height: 8px;">
+          <div class="progress-fill ${(telemetry.utilization_percent || 0) > 85 ? 'critical' : ((telemetry.utilization_percent || 0) > 70 ? 'warning' : 'healthy')}" style="width: ${telemetry.utilization_percent ?? 0}%;"></div>
+        </div>
+      </div>
+      ${modHtml}
+    `;
+  } else if (subKey === "section_6_storage_diagnostics") {
+    const parts = telemetry.logical_partitions || [];
+    const disks = telemetry.physical_disks || [];
+
+    const partRows = parts.map(p => {
+      const pct = typeof p.percent_used === "number" ? p.percent_used : 0;
+      const statusClass = pct > 90 ? 'critical' : (pct > 80 ? 'warning' : 'healthy');
+      return `
+        <tr>
+          <td><strong>${escapeHtml(p.display_name || p.drive_letter || p.mountpoint || "--")}</strong></td>
+          <td><span style="font-size: 11px; background: var(--bg-card); padding: 2px 6px; border-radius: 4px;">${escapeHtml(p.filesystem || p.fstype || "Unknown")}</span></td>
+          <td>${escapeHtml(p.total_formatted || "--")}</td>
+          <td>${escapeHtml(p.used_formatted || "--")}</td>
+          <td style="color: var(--status-healthy);">${escapeHtml(p.free_formatted || "--")}</td>
+          <td>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="min-width: 32px; font-weight: 600;">${pct}%</span>
+              <div class="progress-track" style="height: 6px; flex: 1; min-width: 60px;">
+                <div class="progress-fill ${statusClass}" style="width: ${pct}%;"></div>
+              </div>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join("");
+
+    const diskRows = disks.map(d => `
+      <tr>
+        <td><strong>${escapeHtml(d.device_id !== undefined ? String(d.device_id) : "--")}</strong></td>
+        <td>${escapeHtml(d.friendly_name || d.model || "--")}</td>
+        <td><span class="badge ${d.media_type === 'SSD' ? 'badge-healthy' : 'badge-unknown'}">${escapeHtml(d.media_type || "Unknown")}</span></td>
+        <td>${escapeHtml(d.bus_type || "--")}</td>
+        <td>${escapeHtml(d.size_formatted || format_bytes(d.size_bytes) || "--")}</td>
+        <td><span class="badge ${d.health_status === 'Healthy' ? 'badge-healthy' : 'badge-warning'}">${escapeHtml(d.health_status || "Unknown")}</span></td>
+      </tr>
+    `).join("");
+
+    specificHtml = `
+      <div class="hw-detail-grid">
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Total Storage Capacity</span>
+          <span class="hw-prop-val">${escapeHtml(telemetry.total_capacity_formatted || "Not Available")}</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">SSD Detected</span>
+          <span class="hw-prop-val" style="color: ${telemetry.has_ssd ? 'var(--status-healthy)' : 'var(--text-secondary)'};">${telemetry.has_ssd ? "Yes (Solid State Drive)" : "No"}</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">NVMe Bus</span>
+          <span class="hw-prop-val">${telemetry.has_nvme ? "Yes (High-speed NVMe)" : "No"}</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">HDD Detected</span>
+          <span class="hw-prop-val">${telemetry.has_hdd ? "Yes (Mechanical Drive)" : "No"}</span>
+        </div>
+      </div>
+
+      <div style="margin-top: 10px;">
+        <div class="hw-prop-label" style="margin-bottom: 6px;">Logical Disk Partitions:</div>
+        <table class="hw-subsystem-table">
+          <thead>
+            <tr>
+              <th>Volume / Drive</th>
+              <th>Filesystem</th>
+              <th>Capacity</th>
+              <th>Used</th>
+              <th>Free Space</th>
+              <th>Utilization</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${partRows || '<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 12px;">No logical partitions detected</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+
+      <div style="margin-top: 10px;">
+        <div class="hw-prop-label" style="margin-bottom: 6px;">Physical Disks & Hardware Interfaces:</div>
+        <table class="hw-subsystem-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Model / Drive Name</th>
+              <th>Media</th>
+              <th>Bus Type</th>
+              <th>Capacity</th>
+              <th>Health Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${diskRows || '<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 12px;">No physical disk telemetry exposed without administrator elevation</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    `;
+  } else if (subKey === "section_7_gpu_diagnostics") {
+    const controllers = telemetry.controllers || [];
+    specificHtml = `
+      <div class="hw-detail-grid">
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Primary GPU</span>
+          <span class="hw-prop-val">${escapeHtml(telemetry.primary_gpu || "Not Available")}</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Graphics Architecture</span>
+          <span class="hw-prop-val">${telemetry.has_dedicated_gpu ? "Discrete / Dedicated GPU" : "Integrated System Graphics"}</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Controllers Detected</span>
+          <span class="hw-prop-val">${controllers.length}</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Status</span>
+          <span class="hw-prop-val" style="color: var(--status-healthy);">${escapeHtml(telemetry.status || "HEALTHY")}</span>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+        <div class="hw-prop-label">Detected Video Controllers:</div>
+        ${controllers.map(c => `
+          <div style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 6px; margin-bottom: 8px;">
+              <strong style="color: var(--accent-primary); font-size: 14px;">${escapeHtml(c.name || c.caption || "Graphics Adapter")}</strong>
+              <span class="badge ${c.status === 'OK' ? 'badge-healthy' : 'badge-warning'}">${escapeHtml(c.status || "Active")}</span>
+            </div>
+            <div class="hw-detail-grid">
+              <div>
+                <span class="hw-prop-label">Driver Version:</span>
+                <div class="hw-prop-val">${escapeHtml(c.driver_version || "Not Available")}</div>
+              </div>
+              <div>
+                <span class="hw-prop-label">Driver Date:</span>
+                <div class="hw-prop-val">${escapeHtml(c.driver_date || "Not Available")}</div>
+              </div>
+              <div>
+                <span class="hw-prop-label">Dedicated VRAM:</span>
+                <div class="hw-prop-val">${escapeHtml(c.adapter_ram_formatted || "Dynamic / Shared")}</div>
+              </div>
+              <div>
+                <span class="hw-prop-label">Current Resolution:</span>
+                <div class="hw-prop-val">${escapeHtml(c.current_resolution || "Not Available")}</div>
+              </div>
+              <div>
+                <span class="hw-prop-label">Refresh Rate:</span>
+                <div class="hw-prop-val">${c.refresh_rate_hz ? `${c.refresh_rate_hz} Hz` : "Not Available"}</div>
+              </div>
+              <div>
+                <span class="hw-prop-label">Video Processor:</span>
+                <div class="hw-prop-val">${escapeHtml(c.video_processor || c.compatibility || "Standard")}</div>
+              </div>
+            </div>
+          </div>
+        `).join("") || '<div style="color: var(--text-muted); font-size: 12px;">No video controllers reported by system WMI.</div>'}
+      </div>
+    `;
+  } else if (subKey === "section_8_motherboard_and_firmware") {
+    specificHtml = `
+      <div class="hw-detail-grid">
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Manufacturer</span>
+          <span class="hw-prop-val">${escapeHtml(telemetry.manufacturer || "Not Available")}</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Motherboard / Product</span>
+          <span class="hw-prop-val">${escapeHtml(telemetry.product || "Not Available")}</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Version / Revision</span>
+          <span class="hw-prop-val">${escapeHtml(telemetry.version || "Not Available")}</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Serial Number</span>
+          <span class="hw-prop-val"><code>${escapeHtml(telemetry.serial_number || "Not Available")}</code></span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">BIOS Vendor</span>
+          <span class="hw-prop-val">${escapeHtml(telemetry.bios_vendor || "Not Available")}</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">BIOS Version</span>
+          <span class="hw-prop-val" style="color: var(--accent-primary); font-weight: 700;">${escapeHtml(telemetry.bios_version || "Not Available")}</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">BIOS Release Date</span>
+          <span class="hw-prop-val">${escapeHtml(telemetry.bios_release_date || "Not Available")}</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">SMBIOS Version</span>
+          <span class="hw-prop-val">${escapeHtml(String(telemetry.smbios_version || "Not Available"))}</span>
+        </div>
+      </div>
+    `;
+  } else if (subKey === "section_9_cooling_and_temperature_analysis") {
+    const cpuState = report.section_9_cooling_and_temperature_analysis?.cpu_thermal_state || {};
+    const cpuTemp = cpuState.temperature_c !== null && cpuState.temperature_c !== undefined ? `${cpuState.temperature_c} °C` : "Sensor requires elevation or OEM EC driver";
+    const fanSpeed = telemetry.fan_speed_rpm ? `${telemetry.fan_speed_rpm} RPM` : "Unavailable via generic ACPI without OEM EC driver";
+
+    specificHtml = `
+      <div class="hw-detail-grid">
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">CPU Core Temperature</span>
+          <span class="hw-prop-val" style="color: ${cpuState.temperature_c ? (cpuState.temperature_c > 85 ? 'var(--status-critical)' : 'var(--status-healthy)') : 'var(--text-secondary)'};">${escapeHtml(String(cpuTemp))}</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Thermal Throttling State</span>
+          <span class="hw-prop-val">${escapeHtml(cpuState.throttling_status || "No throttling detected")}</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Fan Count</span>
+          <span class="hw-prop-val">${telemetry.fan_count ?? 0}</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Cooling Fan Tachometer</span>
+          <span class="hw-prop-val">${escapeHtml(String(fanSpeed))}</span>
+        </div>
+      </div>
+
+      <div style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 12px; margin-top: 10px;">
+        <strong style="font-size: 11px; color: var(--accent-primary); text-transform: uppercase;">Sensor Interface Architecture & Limitations:</strong>
+        <p style="font-size: 12px; color: var(--text-secondary); margin: 6px 0 0 0; line-height: 1.4;">
+          ${escapeHtml(telemetry.sensor_note || "Standard Windows ACPI thermal zone sensors require administrator elevation or OEM embedded controller drivers (e.g., ASUS Armoury, HP CoolSense, Lenovo Vantage) to access hardware fan tachometers and direct diode temperatures.")}
+        </p>
+      </div>
+    `;
+  } else if (subKey === "section_10_battery_health") {
+    const isDesk = telemetry.is_desktop || !telemetry.has_battery;
+    specificHtml = `
+      <div class="hw-detail-grid">
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Battery Detected</span>
+          <span class="hw-prop-val">${telemetry.has_battery ? "Battery Installed" : (isDesk ? "Desktop System (Direct AC Power)" : "No Battery Detected")}</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Power Connection</span>
+          <span class="hw-prop-val" style="color: var(--status-healthy);">${telemetry.power_plugged ? "AC Connected (Charging / Maintained)" : "Discharging on Battery"}</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Manufacturer</span>
+          <span class="hw-prop-val">${escapeHtml(telemetry.manufacturer || (isDesk ? "N/A (Desktop)" : "Standard ACPI"))}</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Model / Serial</span>
+          <span class="hw-prop-val">${escapeHtml(telemetry.model || (isDesk ? "N/A" : "Standard"))}</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Design Capacity</span>
+          <span class="hw-prop-val">${telemetry.design_capacity_mwh ? `${telemetry.design_capacity_mwh} mWh` : (isDesk ? "N/A (Desktop)" : "Not Available")}</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Full Charge Capacity</span>
+          <span class="hw-prop-val">${telemetry.full_charge_capacity_mwh ? `${telemetry.full_charge_capacity_mwh} mWh` : (isDesk ? "N/A (Desktop)" : "Not Available")}</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Current Charge</span>
+          <span class="hw-prop-val">${telemetry.current_charge_percent !== undefined ? `${telemetry.current_charge_percent}%` : "AC"}</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Battery Wear</span>
+          <span class="hw-prop-val" style="color: ${(telemetry.health_wear_percent || 0) > 30 ? 'var(--status-warning)' : 'var(--status-healthy)'};">${telemetry.health_wear_percent !== null && telemetry.health_wear_percent !== undefined ? `${telemetry.health_wear_percent}% wear` : (isDesk ? "0.0% (N/A)" : "Not Available")}</span>
+        </div>
+      </div>
+      ${telemetry.has_battery ? `
+        <div style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 12px; margin-top: 10px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 11px;">
+            <span class="hw-prop-label">Current Battery Charge Level</span>
+            <strong>${telemetry.current_charge_percent ?? 0}%</strong>
+          </div>
+          <div class="progress-track" style="height: 8px;">
+            <div class="progress-fill ${(telemetry.current_charge_percent || 0) < 20 ? 'critical' : ((telemetry.current_charge_percent || 0) < 40 ? 'warning' : 'healthy')}" style="width: ${telemetry.current_charge_percent ?? 0}%;"></div>
+          </div>
+        </div>
+      ` : ''}
+    `;
+  } else if (subKey === "section_11_network_adapter_diagnostics") {
+    const adapters = telemetry.adapters || [];
+    specificHtml = `
+      <div class="hw-detail-grid">
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Primary Active Adapter</span>
+          <span class="hw-prop-val">${escapeHtml(telemetry.primary_adapter || "Not Available")}</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Physical Hardware Adapters</span>
+          <span class="hw-prop-val">${telemetry.physical_adapter_count ?? 0}</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Connected Active Interfaces</span>
+          <span class="hw-prop-val" style="color: var(--status-healthy);">${telemetry.active_adapter_count ?? 0}</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Subsystem Status</span>
+          <span class="hw-prop-val" style="color: var(--status-healthy);">${escapeHtml(telemetry.status || "HEALTHY")}</span>
+        </div>
+      </div>
+
+      <div style="margin-top: 10px;">
+        <div class="hw-prop-label" style="margin-bottom: 6px;">Detected Network Interfaces:</div>
+        <table class="hw-subsystem-table">
+          <thead>
+            <tr>
+              <th>Adapter Name / Interface</th>
+              <th>Status</th>
+              <th>Type</th>
+              <th>MAC Address</th>
+              <th>IP Addresses</th>
+              <th>Link Speed</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${adapters.map(a => `
+              <tr>
+                <td><strong>${escapeHtml(a.name || a.description || "Adapter")}</strong></td>
+                <td><span class="badge ${a.net_connection_status === 'Connected' ? 'badge-healthy' : 'badge-unknown'}">${escapeHtml(a.net_connection_status || "Inactive")}</span></td>
+                <td>${a.is_physical ? 'Physical' : 'Virtual / Tunnel'}</td>
+                <td><code style="font-size: 11px;">${escapeHtml(a.mac_address || "None")}</code></td>
+                <td>${escapeHtml((a.ip_addresses || []).join(", ") || "None")}</td>
+                <td>${escapeHtml(a.speed_formatted || (a.speed_mbps ? `${a.speed_mbps} Mbps` : "--"))}</td>
+              </tr>
+            `).join("") || '<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 12px;">No adapters detected</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    `;
+  } else if (subKey === "section_12_additional_device_inventory") {
+    const audio = telemetry.audio_devices || [];
+    const monitors = telemetry.monitors || [];
+    const usb = telemetry.usb_controllers || [];
+    const input = telemetry.input_devices || [];
+
+    specificHtml = `
+      <div class="hw-detail-grid">
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Audio Devices</span>
+          <span class="hw-prop-val">${audio.length}</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Monitors / Displays</span>
+          <span class="hw-prop-val">${monitors.length}</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">USB Controllers</span>
+          <span class="hw-prop-val">${usb.length}</span>
+        </div>
+        <div class="hw-prop-card">
+          <span class="hw-prop-label">Input / HID Devices</span>
+          <span class="hw-prop-val">${input.length}</span>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 10px;">
+        <div>
+          <div class="hw-prop-label" style="margin-bottom: 4px;">Audio Endpoints & Controllers:</div>
+          <ul style="font-size: 12px; color: var(--text-primary); margin: 0 0 0 16px; padding: 0;">
+            ${audio.map(a => `<li><strong>${escapeHtml(a.name || "Audio Device")}</strong> ${a.manufacturer ? `(${escapeHtml(a.manufacturer)})` : ''} — <span style="color: var(--status-healthy);">${escapeHtml(a.status || 'OK')}</span></li>`).join("") || '<li style="color: var(--text-muted);">No audio controllers exposed</li>'}
+          </ul>
+        </div>
+
+        <div>
+          <div class="hw-prop-label" style="margin-bottom: 4px;">Display Monitors:</div>
+          <ul style="font-size: 12px; color: var(--text-primary); margin: 0 0 0 16px; padding: 0;">
+            ${monitors.map(m => `<li><strong>${escapeHtml(m.name || "Display Monitor")}</strong> ${m.current_resolution ? `[${escapeHtml(m.current_resolution)}]` : ''} ${m.device_id ? `(<code>${escapeHtml(m.device_id)}</code>)` : ''}</li>`).join("") || '<li style="color: var(--text-muted);">Standard internal display</li>'}
+          </ul>
+        </div>
+
+        <div>
+          <div class="hw-prop-label" style="margin-bottom: 4px;">USB Host Controllers:</div>
+          <ul style="font-size: 12px; color: var(--text-primary); margin: 0 0 0 16px; padding: 0;">
+            ${usb.map(u => `<li><strong>${escapeHtml(u.name || "USB Host Controller")}</strong> — <span style="color: var(--status-healthy);">${escapeHtml(u.status || 'OK')}</span></li>`).join("") || '<li style="color: var(--text-muted);">No USB host controllers enumerated</li>'}
+          </ul>
+        </div>
+
+        <div>
+          <div class="hw-prop-label" style="margin-bottom: 4px;">Keyboards, Pointing &amp; HID Input Devices:</div>
+          <ul style="font-size: 12px; color: var(--text-primary); margin: 0 0 0 16px; padding: 0;">
+            ${input.map(i => `<li><strong>${escapeHtml(i.name || i.description || "Input Device")}</strong> — <span style="color: var(--status-healthy);">${escapeHtml(i.status || 'OK')}</span></li>`).join("") || '<li style="color: var(--text-muted);">Standard ACPI keyboard/touchpad</li>'}
+          </ul>
+        </div>
+      </div>
+    `;
+  }
+
+  modalBody.innerHTML = `
+    <!-- Subsystem Assessment Banner -->
+    <div style="background: var(--bg-surface); border-radius: var(--radius-sm); border-left: 4px solid ${stat === 'CRITICAL' ? 'var(--status-critical)' : (stat === 'WARNING' ? 'var(--status-warning)' : 'var(--accent-primary)')}; padding: 12px 14px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+        <strong style="font-size: 13px; color: var(--text-primary);">Subsystem Health Assessment</strong>
+        <span class="badge ${statBadge}">${escapeHtml(stat)}</span>
+      </div>
+      <p style="font-size: 12px; color: var(--text-secondary); margin: 0; line-height: 1.4;">${escapeHtml(reasons)}</p>
+    </div>
+
+    <!-- Specific Hardware Properties -->
+    ${specificHtml}
+
+    <!-- Telemetry & Diagnostic Evidence -->
+    <div style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 12px 14px;">
+      <strong style="font-size: 11px; color: var(--accent-primary); text-transform: uppercase;">Telemetry & Diagnostic Evidence:</strong>
+      <ul style="font-size: 11px; color: var(--text-secondary); margin: 6px 0 0 16px; padding: 0; max-height: 140px; overflow-y: auto;">
+        ${evList || '<li>Verified telemetry collected from live system counters.</li>'}
+      </ul>
+    </div>
+  `;
+}
+
+window.openHardwareSubsystemModal = openHardwareSubsystemModal;
+window.closeHardwareSubsystemModal = closeHardwareSubsystemModal;
+window.renderHardwareSubsystemDetails = renderHardwareSubsystemDetails;
 

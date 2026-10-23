@@ -467,10 +467,18 @@ class SYSFIXApi:
         drivers = get_complete_driver_inventory()
         matched = None
         target = (device_id or "").strip().lower()
+        target_clean = target.replace("\\", "").replace("/", "")
         for d in drivers:
             did = (d.get("device_id") or d.get("device_instance_id") or "").strip().lower()
+            did_clean = did.replace("\\", "").replace("/", "")
             dname = (d.get("device_name") or "").strip().lower()
-            if did == target or dname == target or (target and target in did):
+            if (
+                did == target
+                or (target_clean and did_clean == target_clean)
+                or dname == target
+                or (target and (target in did or did in target))
+                or (target_clean and (target_clean in did_clean or did_clean in target_clean))
+            ):
                 matched = d
                 break
 
