@@ -2,9 +2,34 @@
 <img width="1536" height="1024" alt="Terminal Board" src="https://github.com/user-attachments/assets/8f6912f4-7470-47c6-a2e8-0d938595b144" />
 
 
-<h1 align="center">TERMINAL BOARD</h1>
+<div align="center">
 
-<h2 align="center">ONE CENTER. EVERY CONTROL.</h2>
+# TERMINAL BOARD
+
+### ONE CENTER. EVERY CONTROL.
+
+<p>
+  <strong>Your workspace. Your commands. Your control.</strong>
+</p>
+
+<p>
+  A unified terminal management experience designed to simplify
+  workflows, organize operations, and bring everything together.
+</p>
+
+<img src="https://img.shields.io/badge/Status-Active-brightgreen?style=for-the-badge" />
+<img src="https://img.shields.io/badge/Platform-Desktop-blue?style=for-the-badge" />
+<img src="https://img.shields.io/badge/Project-Terminal%20Board-purple?style=for-the-badge" />
+
+</div>
+
+---
+
+<div align="center">
+
+**ONE INTERFACE. INFINITE POSSIBILITIES.**
+
+</div>
 A Unified Windows Desktop Utility for System Monitoring, Instant File Search, Live Window Mirroring and Background Notifications.
 
 ---
