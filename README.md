@@ -1,8 +1,10 @@
 
 <img width="1536" height="1024" alt="Terminal Board" src="https://github.com/user-attachments/assets/8f6912f4-7470-47c6-a2e8-0d938595b144" />
-## TERMINAL BOARD
-## One Center. Every Control.
 
+
+<h1 align="center">TERMINAL BOARD</h1>
+
+<h2 align="center">ONE CENTER. EVERY CONTROL.</h2>
 A Unified Windows Desktop Utility for System Monitoring, Instant File Search, Live Window Mirroring and Background Notifications.
 
 ---
