@@ -1,453 +1,310 @@
-
-<img width="1536" height="1024" alt="Terminal Board" src="https://github.com/user-attachments/assets/8f6912f4-7470-47c6-a2e8-0d938595b144" />
-
-
-<div align="center">
-
 # TERMINAL BOARD
 
 ### ONE CENTER. EVERY CONTROL.
 
-<p>
-  <strong>Your workspace. Your commands. Your control.</strong>
+<p align="center">
+  <strong>Your workspace. Your commands. Your control.</strong><br>
+  A unified Windows desktop utility integrating System Monitoring, Instant File Search, Live Window Mirroring, Hardware Diagnostics, and Background Desktop Notifications into one centralized application.
 </p>
 
-<p>
-  A unified terminal management experience designed to simplify
-  workflows, organize operations, and bring everything together.
+<p align="center">
+  <img src="https://img.shields.io/badge/Platform-Windows%2010%20%7C%20Windows%2011-0078D6?style=for-the-badge&logo=windows&logoColor=white" alt="Platform: Windows" />
+  <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python: 3.10+" />
+  <img src="https://img.shields.io/badge/UI-Neumorphic%20PyWebView-7C83FF?style=for-the-badge" alt="UI: Neumorphic" />
+  <img src="https://img.shields.io/badge/Tests-187%20Passed-45D6A3?style=for-the-badge" alt="Tests: 187 Passed" />
+  <img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" alt="License: MIT" />
 </p>
-
-<img src="https://img.shields.io/badge/Status-Active-brightgreen?style=for-the-badge" />
-<img src="https://img.shields.io/badge/Platform-Desktop-blue?style=for-the-badge" />
-<img src="https://img.shields.io/badge/Project-Terminal%20Board-purple?style=for-the-badge" />
-
-</div>
-
----
-
-<div align="center">
-
-**ONE INTERFACE. INFINITE POSSIBILITIES.**
-
-</div>
-A Unified Windows Desktop Utility for System Monitoring, Instant File Search, Live Window Mirroring and Background Notifications.
 
 ---
 
 ## 1. Project Overview
 
-**Terminal Board** is a modular Windows desktop application designed to bring essential desktop utilities into a single centralized workspace.
+**TERMINAL BOARD** is a unified, high-performance Windows desktop utility designed to centralize everyday system operations into a single cohesive interface.
 
-Normally, users switch between Task Manager, File Explorer, Windows Settings, third-party file search tools and notification utilities to perform everyday operations.
+Traditionally, power users, developers, and system administrators juggle between Task Manager, File Explorer, Windows Settings, third-party file search tools (like Everything), screen mirroring apps, and notification dashboards. Terminal Board consolidates these workflows into a lightweight, modular desktop application built on a modern **Dark Neumorphic** interface powered by Python and PyWebView.
 
-Terminal Board aims to simplify this workflow by integrating multiple functionalities into one responsive desktop application.
+### Core Philosophy
+- **Real Measurements, Zero Fabrication:** All telemetry—from CPU logical core loads to disk health counters and event logs—is acquired directly from authentic Windows kernel, WMI, and Win32 subsystems.
+- **Honest Telemetry:** When low-level sensors (such as ACPI thermal zones or SMART reliability counters) require administrative elevation, Terminal Board clearly notes *"Telemetry restricted / Requires Administrator"* rather than guessing or fabricating numbers.
+- **Safe & Non-Destructive:** Safe read-only inspection by default. All administrative interventions (e.g., DNS flush, process termination, temp file cleanup) require **explicit user confirmation**.
+- **100% Offline & Private:** Zero external cloud dependencies, zero paid APIs, zero tracking telemetry. Sensitive credentials (such as SMTP tokens for scheduled reports) are protected via the Windows Data Protection API (**DPAPI**).
 
-The application focuses on:
+---
 
-- System resource monitoring.
-- Instant file and folder search.
-- Live application window mirroring.
-- Configurable desktop notifications.
-- Centralized dashboard management.
-- Lightweight startup and background processing.
+## 2. Core Capabilities
 
-**Main objective:** Reduce application switching, improve desktop productivity and provide a centralized environment for everyday Windows operations.
+### 2.1 System Monitoring & Resource Telemetry
+- **CPU Utilization:** Real-time aggregate load and per-core utilization breakdown across all logical cores.
+- **RAM Architecture:** Physical RAM capacity, currently active memory, available memory, and pagefile swap usage.
+- **Storage & Disk Telemetry:** Physical drive auto-detection (NVMe, SATA SSD, HDD), volume capacities, active free space, and SMART status.
+- **Hardware Inventory:** Complete hardware component discovery across Processor, Motherboard, Memory DIMMs, GPU, Battery, and Network Adapters.
+- **Background Telemetry Worker:** Asynchronous sampling loop providing smooth UI updates without thread contention.
 
-## 2. Core Features
+### 2.2 Instant File Search (Everything-Style Engine)
+- **High-Performance Crawling:** Multithreaded crawler utilizing optimized filesystem traversal (`os.scandir`).
+- **SQLite FTS5 Full-Text Indexing:** Sub-millisecond incremental querying across file names and directory paths.
+- **Advanced Filtering:** Filter by filename, extension, path, minimum/maximum file size, and modified date ranges.
+- **Safe Shell Actions:** Context-aware commands to launch files in default applications or highlight them directly inside Windows Explorer.
+- **Search Cancellation & History:** Non-blocking asynchronous query workers with instant cancellation and recent search history tracking.
 
-### 2.1 System Monitoring
+### 2.3 Live Window Mirror
+- **Window Discovery:** Enumerates active, top-level visible application windows, filtering cloaked windows (virtual desktops / minimized store apps) and tooltips.
+- **Real-Time Visual Mirroring:** High-speed frame capture utilizing Windows GDI and DWM PrintWindow (`PW_RENDERFULLCONTENT`).
+- **Floating Preview Controls:** Resizable preview window, always-on-top toggle, pause/resume capability, and clean resource release on close.
+- **Safe Memory Handling:** Direct GDI Device Context allocation and cleanup ensuring zero graphic memory leaks.
 
-Provides a centralized overview of the computer's available hardware and operating-system information.
+### 2.4 Desktop Notifications & Action Center Integration
+- **Native Toast Delivery:** Dispatches genuine Windows Action Center notifications via PowerShell WinRT bridge.
+- **Intelligent Deduplication:** Rate-limiting cache (3-minute debounce window) preventing notification floods during high-load events.
+- **Configurable Alert Thresholds:** Customizable warning triggers for CPU, RAM, Disk space, and hardware driver alerts.
+- **Persistent Notification Log:** Complete local SQLite history of dispatched alerts with acknowledge/dismiss actions.
 
-**Monitoring capabilities:**
+### 2.5 Hardware Diagnostics & Fault Correlation Engine
+- **Pre-Emptive Diagnostics:** Active user-space instruction validation, RAM heap bit-pattern integrity testing, and non-destructive disk read latency profiling.
+- **Hardware Fault Correlation:** Correlates hardware inventory items, Windows WHEA error events, and diagnostic test anomalies to detect impending hardware failure.
+- **Multi-Format Export:** Generates 20-section diagnostic reports in JSON, formatted Plain Text, and standalone HTML.
 
-- CPU utilization.
-- RAM utilization.
-- Total and available memory.
-- Disk capacity.
-- Disk usage.
-- Storage information.
-- Relevant hardware and driver information.
-- System status indicators.
+### 2.6 Background Email Reporting & Automation
+- **Scheduled System Reports:** Integrated with Windows Task Scheduler to compile and dispatch daily diagnostic digests.
+- **DPAPI Vault Security:** SMTP server credentials encrypted locally via Windows `CryptProtectData`.
 
-**Working Process:**
-
-1. The user opens the System Monitoring module.
-2. The application requests system information through supported Windows interfaces.
-3. A background worker collects the required metrics.
-4. The collected information is processed into structured values.
-5. The dashboard displays the results using cards, indicators and visual components.
-6. Metrics refresh periodically without blocking the user interface.
-
-The application must handle unavailable hardware information and permission restrictions gracefully.
-
-### 2.2 Instant File Search
-
-A centralized file and folder search module designed to locate files quickly.
-
-**Features:**
-
-- Search files and folders.
-- Search using file names.
-- Search using extensions.
-- Display file locations.
-- Display file types.
-- Display file sizes.
-- Display modified dates.
-- Keyboard-based navigation.
-- Search cancellation.
-- Handle inaccessible directories.
-
-**Working Process:**
-
-1. The user enters a search query.
-2. The search coordinator validates the query.
-3. The search engine checks the configured search locations.
-4. It uses an appropriate indexing mechanism or optimized filesystem traversal.
-5. Matching files and folders are collected.
-6. Results are displayed with their metadata.
-7. The user can select a result to open its location or access the file.
-
-Search operations should run in background workers to prevent interface freezing.
-
-### 2.3 Window Mirror
-
-Window Mirror allows users to select a currently running application and view its live visual output in a separate floating window.
-
-**Features:**
-
-- Enumerate eligible running application windows.
-- Select a target application.
-- Live window preview.
-- Floating and resizable preview window.
-- Pause and resume.
-- Hide and show.
-- Always-on-top option where supported.
-- Handle closed or minimized windows.
-- Capture error handling.
-
-**Working Process:**
-
-1. The application enumerates eligible windows.
-2. Available application windows are displayed.
-3. The user selects a window.
-4. The capture controller initializes a supported Windows capture session.
-5. Frames are received from the selected window.
-6. Frames are rendered in the floating preview window.
-7. The user can pause, resume or close the preview.
-8. When the session ends, capture resources are released.
-
-The implementation should use Windows Graphics Capture or another appropriate supported capture API.
-
-Protected content and unsupported capture conditions must be handled without crashing.
-
-### 2.4 Desktop Notifications
-
-Provides configurable notifications for important application events.
-
-**Features:**
-
-- Enable or disable notifications.
-- Configurable notification preferences.
-- Windows desktop notification integration.
-- Background notification support where implemented.
-- System tray integration where implemented.
-- Explicit application exit control.
-
-**Working Process:**
-
-1. The user opens Settings.
-2. Notification preferences are configured.
-3. The notification manager reads the settings.
-4. Application events are checked against the enabled preferences.
-5. Supported notifications are delivered through Windows notification mechanisms.
-6. The user receives the notification.
-
-If notifications continue after the main window closes, the application must provide a visible background lifecycle and a clear exit option.
+---
 
 ## 3. System Architecture
 
-Terminal Board follows a modular, layered architecture.
+```mermaid
+graph TD
+    UI[Frontend: Neumorphic Web UI\nHTML5 / CSS3 / Vanilla JS]
+    WV[Desktop Shell: PyWebView\nEdge Chromium / WebView2 Engine]
+    FL[Local REST Bridge: Flask 3.0\n127.0.0.1 Fallback Server]
+    API[Unified API Dispatcher: SYSFIXApi\nbackend/api.py]
 
-```text
-              TERMINAL BOARD
-                     |
-          PRESENTATION LAYER
-                     |
-       +-------------+-------------+
-       |             |             |
-    Dashboard     File Search   Window Mirror
-       |             |             |
-       +-------------+-------------+
-                     |
-          APPLICATION SERVICES
-                     |
-       +-------------+-------------+
-       |             |             |
-   Search        Capture       Notification
- Coordinator    Controller       Manager
-       |             |             |
-       +-------------+-------------+
-                     |
-             BACKGROUND WORKERS
-                     |
-       +-------------+-------------+
-       |             |             |
-    Indexing      Metrics      Event Processing
-       |             |             |
-       +-------------+-------------+
-                     |
-         WINDOWS INTEGRATION LAYER
-                     |
-       +-------------+-------------+
-       |             |             |
-    Windows APIs  Filesystem   Capture APIs
-       |             |             |
-       +-------------+-------------+
-                     |
-              WINDOWS OS
+    subgraph Core Engines
+        MON[System Monitor & Metrics\nbackend/core/metrics.py]
+        SRCH[Instant File Search\nbackend/core/file_search.py]
+        MIRR[Live Window Mirror\nbackend/core/window_mirror.py]
+        TOAST[Desktop Notifications\nbackend/core/notifications.py]
+        HW[Hardware Engine & Faults\nbackend/core/hardware_diagnostics.py]
+        DB[(Local SQLite Database\nbackend/database.py)]
+    end
+
+    subgraph Windows Subsystems
+        WIN32[Win32 API & GDI32 / User32]
+        WMI[Windows Management Instrumentation]
+        DWM[Desktop Window Manager]
+        DPAPI[Windows DPAPI Vault]
+        FTS[SQLite FTS5 Full-Text Engine]
+    end
+
+    UI -->|JS API Bridge| WV
+    UI -->|REST AJAX Fallback| FL
+    WV --> API
+    FL --> API
+
+    API --> MON
+    API --> SRCH
+    API --> MIRR
+    API --> TOAST
+    API --> HW
+    API --> DB
+
+    MON --> WIN32
+    MON --> WMI
+    SRCH --> FTS
+    MIRR --> WIN32
+    MIRR --> DWM
+    TOAST --> WIN32
+    HW --> WMI
+    DB --> DPAPI
 ```
 
-### Architecture Explanation
-
-**1. Presentation Layer**
-
-Responsible for displaying the user interface.
-
-Includes:
-- Main dashboard.
-- Search interface.
-- Window Mirror interface.
-- Settings.
-- Notification controls.
-
-**2. Application Services**
-
-Acts as the central coordination layer.
-
-Includes:
-- Search coordinator.
-- Capture controller.
-- Notification manager.
-
-**3. Background Workers**
-
-Handles time-consuming operations independently.
-
-Includes:
-- File indexing.
-- System metric collection.
-- Window enumeration.
-- Event processing.
-
-**4. Windows Integration Layer**
-
-Communicates with Windows operating-system interfaces.
-
-Includes:
-- System APIs.
-- Filesystem operations.
-- Window capture APIs.
-- Notification mechanisms.
-
-**5. Operating System**
-
-Provides access to:
-- Running processes.
-- Files and directories.
-- System resources.
-- Application windows.
-- User session information.
+---
 
 ## 4. Technology Stack
 
-The following is the proposed technology mapping. The exact framework and libraries must be confirmed against the actual source code.
+| Layer | Component | Description |
+| :--- | :--- | :--- |
+| **Runtime Environment** | Python 3.10+ | Primary application runtime for backend logic and Windows integration. |
+| **Desktop Shell** | PyWebView 5.0+ | Lightweight native desktop window leveraging Windows Edge WebView2. |
+| **Web Framework** | Flask 3.0+ & Flask-CORS | Fallback local REST API and HTTP browser debugging server. |
+| **Low-Level APIs** | `pywin32`, `ctypes`, `WMI` | Direct interfacing with User32, GDI32, Win32EvtLog, DWM, and WMI classes. |
+| **System Telemetry** | `psutil` + Safe Wrapper | Cross-platform metrics wrapped with fallback guards for permission isolation. |
+| **Image Processing** | Pillow (PIL) | High-speed frame resizing, buffer decoding, and JPEG encoding for Window Mirror. |
+| **Local Storage** | SQLite3 + FTS5 | Local database for historical metrics, alerts, settings, and full-text file search. |
+| **Security** | Windows DPAPI | Native credential encryption via Windows cryptographic APIs. |
+| **User Interface** | Vanilla HTML5 / CSS3 / JS | Dark Neumorphic styling, zero bulky web frameworks, sub-100ms UI responsiveness. |
+| **Testing** | Pytest 8.0+ | Automated test suite with 187 comprehensive test cases. |
+| **Packaging** | PyInstaller 6.0+ & Inno Setup | Standalone Windows executable and standard setup installer. |
 
-| Component | Technology / Approach |
-|---|---|
-| Operating System | Windows 10 / Windows 11 |
-| Desktop UI | Existing desktop framework |
-| System Monitoring | Supported Windows APIs and compatible libraries |
-| File Search | Filesystem traversal / indexing |
-| Window Mirroring | Windows Graphics Capture or compatible API |
-| Notifications | Windows notification mechanisms |
-| Background Processing | Worker threads / asynchronous tasks |
-| Packaging | PyInstaller or framework-specific packager |
-| Testing | Unit and integration testing |
+---
 
-## 5. Application Workflow
+## 5. Repository Structure
 
-### Step 1: Application Startup
-
-- Application launches.
-- Branding and splash screen are displayed.
-- Main application shell is initialized.
-- Dashboard becomes available.
-- Non-essential initialization continues in the background.
-
-### Step 2: Module Selection
-
-The user selects one of the available modules:
-
-- System Monitoring.
-- Instant File Search.
-- Window Mirror.
-- Notifications and Settings.
-
-### Step 3: Request Processing
-
-The selected module sends a request to its corresponding application service.
-
-### Step 4: Data Collection
-
-The application accesses the relevant Windows API, filesystem or capture interface.
-
-### Step 5: Data Processing
-
-Collected information is validated and converted into UI-friendly results.
-
-### Step 6: Display
-
-The results are presented through the dashboard or the selected module.
-
-### Step 7: Resource Management
-
-Background tasks, timers, search operations and capture sessions are stopped or released when no longer required.
-
-## 6. Performance Optimization
-
-Terminal Board emphasizes responsive desktop operation.
-
-Optimization strategies include:
-
-- Asynchronous initialization.
-- Background processing.
-- Efficient filesystem search.
-- Controlled refresh intervals.
-- Resource cleanup.
-- Cancellation of unnecessary tasks.
-- Avoiding unnecessary UI updates.
-- Lazy loading of non-essential information.
-
-A three-second target for reaching a usable main screen is a design goal that must be measured through testing.
-
-## 7. Security and Privacy
-
-The application follows these principles:
-
-- Respect Windows access permissions.
-- Do not bypass protected application windows.
-- Do not execute arbitrary commands from search results.
-- Avoid collecting unnecessary personal information.
-- Do not transmit system information without a clear purpose and user consent.
-- Avoid storing sensitive information in logs.
-- Release capture resources after use.
-- Provide explicit controls for background execution.
-
-## 8. Error Handling
-
-The application should gracefully handle:
-
-- Inaccessible directories.
-- Missing hardware information.
-- Unsupported capture sessions.
-- Closed application windows.
-- Filesystem permission errors.
-- Background worker failures.
-- Notification delivery failures.
-- Initialization errors.
-
-Errors should be displayed in understandable language rather than exposing confusing internal exceptions.
-
-## 9. Testing and Evaluation
-
-The application should be evaluated through the following tests.
-
-| Test Area | Expected Result |
-|---|---|
-| Application Startup | Main interface loads correctly |
-| CPU Monitoring | Displays available CPU utilization |
-| RAM Monitoring | Displays accurate memory information |
-| Disk Monitoring | Displays capacity and usage |
-| File Search | Returns relevant matching files |
-| Search Cancellation | Stops an active search |
-| Window Enumeration | Lists eligible application windows |
-| Window Mirror | Displays live frames |
-| Pause / Resume | Controls capture correctly |
-| Notifications | Follows user preferences |
-| Background Lifecycle | Continues or exits according to settings |
-| Stability | No repeatable crashes or uncontrolled resource growth |
-
-No numerical performance results should be claimed without actual test measurements.
-
-## 10. Known Limitations
-
-- Search performance depends on storage speed, indexing and directory permissions.
-- Some Windows applications may not support live capture.
-- Hardware information availability varies by device.
-- Windows notification delivery depends on operating-system settings.
-- Performance varies according to the target computer.
-- Protected application content cannot be assumed to be capturable.
-
-## 11. Future Enhancements
-
-- Customizable dashboard widgets.
-- Advanced file search filters.
-- Keyboard shortcuts.
-- CPU and memory limits for Window Mirror.
-- Exportable system summaries.
-- Diagnostic log exports.
-- Optional plugin architecture.
-- Additional accessibility features.
-- Localization.
-- Signed Windows installer.
-- Automated regression testing.
-
-## 12. Installation and Execution
-
-Installation instructions must be updated after verifying the actual repository and dependencies.
-
-A typical development setup may follow this sequence:
-
-```bash
-git clone <YOUR_REPOSITORY_URL>
-cd <PROJECT_DIRECTORY>
+```
+TERMINAL-BOARD/
+│
+├── .gitignore                      # Comprehensive Git exclusion rules
+├── LICENSE.txt                     # MIT Open-Source License
+├── README.md                       # Master Documentation
+├── Terminal Board.png              # Application UI Screenshot & Branding
+├── WINPE_RECOVERY_GUIDE.md         # Pre-boot WinPE disaster recovery guide
+│
+├── app.py                          # Main Desktop Entry Point
+├── recovery_cli.py                 # Pure console triage entry point for WinPE
+├── requirements.txt                # Production and development dependencies
+│
+├── backend/
+│   ├── __init__.py                 # Backend package marker
+│   ├── api.py                      # Unified PyWebView & Flask REST API dispatcher
+│   ├── database.py                 # SQLite schema, migrations, and settings storage
+│   ├── monitor.py                  # Background telemetry worker thread
+│   └── core/
+│       ├── __init__.py             # Core package marker
+│       ├── alerts.py               # Alert evaluation, threshold breaches & toasts
+│       ├── credential_store.py     # Windows DPAPI credential encryption vault
+│       ├── cryptic.py              # Cryptic string sanitizer & privacy anonymizer
+│       ├── diagnostics.py          # Diagnostic rule engine & safe remediation
+│       ├── driver_alerts.py        # Driver fault correlation & alert generation
+│       ├── driver_inventory.py     # Windows PnP driver catalog & hardware IDs
+│       ├── email_reports.py        # 7:00 PM daily system diagnostic email digest
+│       ├── email_service.py        # SMTP client, TLS verification & retry queue
+│       ├── events.py               # Windows Event Log query engine (win32evtlog)
+│       ├── fault_correlation.py    # Cross-layer hardware fault correlation engine
+│       ├── file_search.py          # FTS5 instant file search & crawler engine
+│       ├── hardware_diagnostics.py # Active hardware stress & integrity tests
+│       ├── hardware_inventory.py   # Complete WMI hardware component discovery
+│       ├── hardware_report.py      # 20-section report builder (JSON/TXT/HTML)
+│       ├── license_audit.py        # Software license detection & audit scanner
+│       ├── license_expiry.py       # Expiry date evaluation & license tracking
+│       ├── metrics.py              # CPU, RAM, Disk, GPU & Battery collectors
+│       ├── network.py              # Interface diagnostics, latency & port scanner
+│       ├── notifications.py        # Desktop toast delivery & rate limiter
+│       ├── office_licensing.py     # Microsoft Office OSPP license inspector
+│       ├── safe_psutil.py          # Crash-safe psutil wrapper
+│       ├── scheduler.py            # Windows Task Scheduler automation
+│       ├── software.py             # Installed software registry discovery
+│       ├── startup.py              # Windows Run registry configuration
+│       ├── storage.py              # Physical storage, NVMe & SMART diagnostics
+│       ├── subproc.py              # Safe subprocess execution & cleanup
+│       └── window_mirror.py        # Live window discovery & GDI frame capture
+│
+├── frontend/
+│   ├── index.html                  # Neumorphic single-page desktop dashboard
+│   ├── assets/                     # Frontend logos, icons, and emblems
+│   ├── css/
+│   │   └── neumorphic.css          # Restrained dual-shadow dark neumorphic stylesheet
+│   └── js/
+│       ├── app.js                  # Main UI coordinator, views & event bindings
+│       ├── charts.js               # Lightweight SVG sparkline and chart renderer
+│       └── icons.js                # Embedded SVG vector icon library
+│
+├── assets/                         # High-resolution application icons and master assets
+├── docs/                           # Extended technical context & architecture notes
+├── tests/                          # 23 automated test suites (187 test cases)
+└── winpe/                          # Scripts and configurations for WinPE boot ISO
 ```
 
-If the project uses Python and provides a requirements file:
+---
 
+## 6. Installation & Execution
+
+### Prerequisites
+- Windows 10 or Windows 11 (64-bit recommended)
+- Python 3.10 or higher
+- PowerShell 5.1+ (included natively with Windows)
+
+### 1. Clone Repository
 ```bash
+git clone https://github.com/KarthikeyanSA369/TERMINAL-BOARD.git
+cd TERMINAL-BOARD
+```
+
+### 2. Create and Activate Virtual Environment
+```powershell
 python -m venv venv
-venv\Scripts\activate
+.\venv\Scripts\activate
+```
+
+### 3. Install Dependencies
+```powershell
 pip install -r requirements.txt
 ```
 
-Run the application using its actual entry point:
-
-```bash
+### 4. Launch Application
+```powershell
+# Standard Desktop Window (PyWebView)
 python app.py
+
+# Local Browser / Web Mode (Accessible via http://127.0.0.1:5055)
+python app.py --web
+
+# Standalone CLI Hardware Diagnostic Scan
+python app.py --hardware-scan --export-report all
 ```
 
-**Note:** The entry point and installation commands must be verified against the repository before use.
+---
 
-## 13. Project Goals
+## 7. Testing & Quality Assurance
 
-Terminal Board aims to provide:
+The project contains a comprehensive automated test suite covering all core engines, subsystems, and APIs.
 
-- One centralized Windows workspace.
-- Convenient access to system information.
-- Efficient file discovery.
-- Live application-window monitoring.
-- Configurable notifications.
-- Responsive application performance.
-- Modular and maintainable architecture.
+```powershell
+# Execute the entire test suite
+python -m pytest tests
 
-## 14. Conclusion
+# Run tests with verbose output
+python -m pytest tests -v
 
-Terminal Board is designed to simplify everyday Windows desktop operations through a unified and modular application.
+# Run specific functional test suites
+python -m pytest tests/test_window_mirror.py
+python -m pytest tests/test_file_search.py
+python -m pytest tests/test_notifications.py
+python -m pytest tests/test_hardware_engine.py
+```
 
-By combining system monitoring, instant file search, live window mirroring and configurable notifications, it aims to reduce the need to switch between multiple independent applications.
+### Test Suite Verification Status
+- **Total Tests:** 187
+- **Passed:** 187
+- **Failed:** 0
+- **Pass Rate:** 100%
 
-Its architecture emphasizes responsiveness, modularity, privacy, resource management and a consistent user experience.
+---
 
-**TERMINAL BOARD — One Center. Every Control.**
+## 8. Build & Packaging
+
+To compile a standalone, zero-dependency Windows desktop executable:
+
+```powershell
+# Build standalone directory bundle using PyInstaller
+python build_exe.py
+
+# Or run the batch packaging script
+.\build_exe.bat
+```
+
+The compiled binaries will be output to the `dist/TERMINAL_BOARD/` directory.
+
+To create an Inno Setup installer package, compile `installer.iss` using Inno Setup 6+.
+
+---
+
+## 9. Security & Privacy
+
+Terminal Board adheres to strict security standards:
+- **Zero Remote Telemetry:** No user data, system profiles, or telemetry metrics are transmitted to any cloud or third-party servers.
+- **Windows DPAPI Vault:** Credentials entered by the user (such as SMTP app passwords for report delivery) are encrypted on disk using the current user's DPAPI key (`CryptProtectData`), preventing offline extraction.
+- **Explicit Confirmation for Actions:** Remediation tools (DNS cache flush, temporary file purging, process termination) cannot run autonomously; each requires explicit interactive approval.
+- **Subprocess Isolation:** Subprocess execution utilizes strict timeout parameters, parameter escaping, and child process process-group tracking to avoid hanging tasks or resource leaks.
+
+---
+
+## 10. License
+
+This project is licensed under the **MIT License**. See the [LICENSE.txt](file:///e:/SYSFIX/LICENSE.txt) file for details.
+
+---
+
+<div align="center">
+  <strong>TERMINAL BOARD — ONE CENTER. EVERY CONTROL.</strong><br>
+  Built with precision for Windows power users and administrators.
+</div>

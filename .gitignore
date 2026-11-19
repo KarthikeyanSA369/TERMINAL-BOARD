@@ -1,0 +1,88 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyd
+
+# C extensions
+*.so
+
+# Distribution / packaging
+build/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller & build outputs
+*.manifest
+*.spec.bak
+Output/
+
+# Pre-boot & WinPE scratch / mount directories
+WinPE_Work/
+winpe_mount/
+*.wim
+*.iso
+
+# Local backups & scratch
+_backups*/
+scratch/
+*.bak
+*.swp
+*~
+
+# Testing & code coverage
+.pytest_cache/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# Generated runtime data, reports & logs
+reports/
+logs/
+*.log
+*.tmp
+*.temp
+diagnostic_reports/
+
+# Environments & IDEs
+.env
+.env.*
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Windows OS generated
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
