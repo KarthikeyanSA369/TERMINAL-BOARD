@@ -6,7 +6,9 @@ Covers CPU, Memory, Disk partitions, Battery status, Processes, and Hardware Sen
 
 import time
 import os
-import psutil
+import sys
+import ctypes
+import backend.core.safe_psutil as psutil
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 import collections
@@ -140,29 +142,76 @@ def get_battery_metrics() -> Dict[str, Any]:
         "health": "Good" if battery.percent > 20 else "Low Battery Warning"
     }
 
+def get_volume_label(mountpoint: str) -> str:
+    """Retrieve Windows volume label for a mount point if available."""
+    if sys.platform != "win32":
+        return ""
+    try:
+        kernel32 = ctypes.windll.kernel32
+        vol_buf = ctypes.create_unicode_buffer(1024)
+        fs_buf = ctypes.create_unicode_buffer(1024)
+        path = mountpoint if mountpoint.endswith("\\") else mountpoint + "\\"
+        rc = kernel32.GetVolumeInformationW(
+            ctypes.c_wchar_p(path),
+            vol_buf,
+            ctypes.sizeof(vol_buf),
+            None, None, None,
+            fs_buf,
+            ctypes.sizeof(fs_buf)
+        )
+        if rc:
+            return vol_buf.value
+    except Exception:
+        pass
+    return ""
+
 def get_disk_volume_metrics() -> List[Dict[str, Any]]:
     """Retrieve all mounted disk partitions, file systems, and space utilization."""
     partitions = []
+    seen_mounts = set()
     try:
         parts = psutil.disk_partitions(all=False)
         for p in parts:
+            mp = p.mountpoint
+            if mp in seen_mounts:
+                continue
+            seen_mounts.add(mp)
             try:
-                usage = psutil.disk_usage(p.mountpoint)
+                usage = psutil.disk_usage(mp)
+                label = get_volume_label(mp)
+                drive_letter = mp.rstrip("\\")
+                display_name = f"{drive_letter} ({label})" if label else drive_letter
+                fstype = p.fstype or "Unknown"
+
+                total_fmt = format_bytes(usage.total)
+                free_fmt = format_bytes(usage.free)
+                used_fmt = format_bytes(usage.used)
+                pct_used = round(usage.percent, 1)
+                pct_free = round(100.0 - usage.percent, 1)
+
+                summary = f"{drive_letter} — {total_fmt} total | {free_fmt} free | {pct_used}% used"
+                if label:
+                    summary = f"{drive_letter} ({label}) — {total_fmt} total | {free_fmt} free | {pct_used}% used"
+
                 partitions.append({
                     "device": p.device,
-                    "mountpoint": p.mountpoint,
-                    "fstype": p.fstype,
+                    "mountpoint": mp,
+                    "drive_letter": drive_letter,
+                    "label": label,
+                    "display_name": display_name,
+                    "fstype": fstype,
                     "opts": p.opts,
                     "total_bytes": usage.total,
-                    "total_formatted": format_bytes(usage.total),
+                    "total_formatted": total_fmt,
                     "used_bytes": usage.used,
-                    "used_formatted": format_bytes(usage.used),
+                    "used_formatted": used_fmt,
                     "free_bytes": usage.free,
-                    "free_formatted": format_bytes(usage.free),
+                    "free_formatted": free_fmt,
                     "free_gb": round(usage.free / (1024**3), 2),
-                    "percent_used": usage.percent,
-                    "percent_free": round(100.0 - usage.percent, 1),
-                    "is_low_space": (100.0 - usage.percent) < 10.0
+                    "percent_used": pct_used,
+                    "percent_free": pct_free,
+                    "summary_line": summary,
+                    "is_low_space": pct_free < 10.0
                 })
             except (PermissionError, FileNotFoundError, OSError):
                 continue

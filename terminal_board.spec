@@ -29,6 +29,12 @@ binaries = []
 binaries += collect_dynamic_libs('pythonnet')
 binaries += collect_dynamic_libs('clr_loader')
 
+# Include pdh.dll for WinPE psutil dependency resolution
+sys32 = os.path.join(os.environ.get('SystemRoot', 'C:\\Windows'), 'System32')
+pdh_dll = os.path.join(sys32, 'pdh.dll')
+if os.path.exists(pdh_dll):
+    binaries.append((pdh_dll, '.'))
+
 hiddenimports = [
     'win32timezone',
     'win32evtlog',
@@ -38,6 +44,7 @@ hiddenimports = [
     'winreg',
     'wmi',
     'psutil',
+    'backend.core.safe_psutil',
     'flask',
     'flask_cors',
     'webview',

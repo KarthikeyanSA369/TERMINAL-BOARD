@@ -63,6 +63,7 @@ const api = {
       get_network_diagnostics: "/api/network",
       get_installed_tools: "/api/tools",
       refresh_installed_tools: "/api/tools/refresh",
+      get_software_details: (id) => `/api/software/${encodeURIComponent(id)}`,
       get_license_audit: "/api/license-audit",
       update_license_compliance_note: "/api/license-audit/notes",
       get_license_file_preview: "/api/license-audit/preview",
@@ -748,21 +749,42 @@ async function renderDashboard(isSilent = false) {
   // Installed Tools Quick Cards Grid
   const toolsGrid = document.getElementById("dash-tools-grid");
   if (toolsGrid && data.curated_tools) {
-    toolsGrid.innerHTML = data.curated_tools.map(tool => `
-      <div class="tool-card ${tool.installed ? '' : 'tool-uninstalled'}" onclick="openToolDetailModal('${tool.id}')">
-        <div class="tool-header">
-          <div class="tool-icon">${getIcon(tool.icon || 'package', 18)}</div>
-          <div style="flex: 1; min-width: 0;">
-            <div class="tool-title" title="${tool.name}">${tool.name}</div>
-            <div class="tool-version">${tool.installed ? tool.version : 'Not Installed'}</div>
+    if (!state.toolsData) {
+      state.toolsData = {
+        curated_tools: data.curated_tools,
+        all_registry_software: [],
+        total_detected: data.curated_tools.filter(t => t.installed).length
+      };
+    } else {
+      state.toolsData.curated_tools = data.curated_tools;
+    }
+
+    toolsGrid.innerHTML = data.curated_tools.map(tool => {
+      const toolId = escapeHtml(tool.id || tool.name);
+      const toolName = escapeHtml(tool.name || 'Application');
+      const toolVersion = escapeHtml(tool.installed ? tool.version : 'Not Installed');
+      const toolCategory = escapeHtml(tool.category || 'Tool');
+      return `
+        <div class="tool-card ${tool.installed ? '' : 'tool-uninstalled'}"
+             tabindex="0"
+             role="button"
+             aria-label="View details for ${toolName}"
+             data-tool-id="${toolId}"
+             onclick="openToolDetailModal('${toolId}')">
+          <div class="tool-header">
+            <div class="tool-icon">${getIcon(tool.icon || 'package', 18)}</div>
+            <div style="flex: 1; min-width: 0;">
+              <div class="tool-title" title="${toolName}">${toolName}</div>
+              <div class="tool-version">${toolVersion}</div>
+            </div>
+          </div>
+          <div class="tool-card-footer">
+            <span class="badge ${tool.installed ? 'badge-healthy' : 'badge-cryptic'}" title="${toolCategory}">${toolCategory}</span>
+            <span class="tool-card-link" style="font-size: 11px; color: var(--accent-primary); font-weight: 500; white-space: nowrap;">Details →</span>
           </div>
         </div>
-        <div class="tool-card-footer">
-          <span class="badge ${tool.installed ? 'badge-healthy' : 'badge-cryptic'}" title="${tool.category || 'Tool'}">${tool.category || 'Tool'}</span>
-          <span style="font-size: 11px; color: var(--accent-primary); font-weight: 500; white-space: nowrap;">Details →</span>
-        </div>
-      </div>
-    `).join("");
+      `;
+    }).join("");
   }
 
   // Dashboard Active Alerts Banner
@@ -1462,21 +1484,33 @@ function filterAndRenderToolsGrid() {
   const grid = document.getElementById("tools-full-grid");
   if (!grid) return;
 
-  grid.innerHTML = filtered.map(tool => `
-    <div class="tool-card ${tool.installed ? '' : 'tool-uninstalled'}" onclick="openToolDetailModal('${tool.id || tool.name}')">
-      <div class="tool-header">
-        <div class="tool-icon">${getIcon(tool.icon || 'package', 18)}</div>
-        <div style="flex: 1; min-width: 0;">
-          <div class="tool-title" title="${tool.name}">${tool.name}</div>
-          <div class="tool-version">${tool.installed ? tool.version : 'Not Installed'}</div>
+  grid.innerHTML = filtered.map(tool => {
+    const toolId = escapeHtml(tool.id || tool.name);
+    const toolName = escapeHtml(tool.name || 'Application');
+    const toolVersion = escapeHtml(tool.installed ? tool.version : 'Not Installed');
+    const toolCategory = escapeHtml(tool.category || 'App');
+    const toolSource = escapeHtml(tool.source || 'Registry');
+    return `
+      <div class="tool-card ${tool.installed ? '' : 'tool-uninstalled'}"
+           tabindex="0"
+           role="button"
+           aria-label="View details for ${toolName}"
+           data-tool-id="${toolId}"
+           onclick="openToolDetailModal('${toolId}')">
+        <div class="tool-header">
+          <div class="tool-icon">${getIcon(tool.icon || 'package', 18)}</div>
+          <div style="flex: 1; min-width: 0;">
+            <div class="tool-title" title="${toolName}">${toolName}</div>
+            <div class="tool-version">${toolVersion}</div>
+          </div>
+        </div>
+        <div class="tool-card-footer">
+          <span class="badge ${tool.installed ? 'badge-healthy' : 'badge-cryptic'}" title="${toolCategory}">${toolCategory}</span>
+          <span class="tool-card-link" style="font-size: 11px; color: var(--accent-primary); font-weight: 500; white-space: nowrap;">Details →</span>
         </div>
       </div>
-      <div class="tool-card-footer">
-        <span class="badge ${tool.installed ? 'badge-healthy' : 'badge-cryptic'}" title="${tool.category || 'App'}">${tool.category || 'App'}</span>
-        <span style="font-size: 11px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px;" title="${tool.source || 'Registry'}">${tool.source || 'Registry'}</span>
-      </div>
-    </div>
-  `).join("");
+    `;
+  }).join("");
 }
 
 // 7. LICENSE AUDIT
@@ -2127,44 +2161,219 @@ function setupModals() {
       }
     });
   });
+
+  // Global event delegation for all application cards (Dashboard & Installed Tools)
+  document.addEventListener("click", (e) => {
+    const card = e.target.closest(".tool-card");
+    if (!card) return;
+    // Prevent accidental clicks if click was on an unrelated button/control inside card
+    if (e.target.closest("button:not(.tool-card)") || e.target.closest("a:not(.tool-card-link)")) return;
+    const toolId = card.dataset.toolId;
+    if (toolId) {
+      openToolDetailModal(toolId);
+    }
+  });
+
+  // Keyboard accessibility for application cards
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      const card = document.activeElement && document.activeElement.closest(".tool-card");
+      if (card) {
+        e.preventDefault();
+        const toolId = card.dataset.toolId;
+        if (toolId) {
+          openToolDetailModal(toolId);
+        }
+      }
+    }
+  });
 }
 
-function openToolDetailModal(toolId) {
-  const all = [...(state.toolsData?.curated_tools || []), ...(state.toolsData?.all_registry_software || [])];
-  const tool = all.find(t => (t.id && t.id === toolId) || t.name === toolId);
-  if (!tool) return;
+async function openToolDetailModal(toolId) {
+  if (!toolId) return;
+  const modal = document.getElementById("tool-detail-modal");
+  if (!modal) return;
 
-  document.getElementById("tool-modal-title").textContent = tool.name;
-  document.getElementById("tool-modal-version").textContent = tool.version;
-  document.getElementById("tool-modal-publisher").textContent = tool.publisher;
-  document.getElementById("tool-modal-category").textContent = tool.category || "General Software";
-  document.getElementById("tool-modal-path").textContent = tool.install_location || "N/A";
-  document.getElementById("tool-modal-exe").textContent = tool.exe_path || "N/A";
-  document.getElementById("tool-modal-license-file").textContent = tool.license_file || "None Detected in Install Directory";
-  document.getElementById("tool-modal-source").textContent = tool.source || "Windows Registry";
+  const titleEl = document.getElementById("tool-modal-title");
+  const iconEl = document.getElementById("tool-modal-icon");
+  const subEl = document.getElementById("tool-modal-id-subtitle");
+  const badgeEl = document.getElementById("tool-modal-status-badge");
+  const loadingEl = document.getElementById("tool-modal-loading");
+  const errorEl = document.getElementById("tool-modal-error");
+  const errorMsgEl = document.getElementById("tool-modal-error-msg");
+  const retryBtn = document.getElementById("tool-modal-retry-btn");
+  const contentEl = document.getElementById("tool-modal-content");
 
-  // Match against license records if available
-  const licRecord = state.licenseData?.records?.find(r => r.name.toLowerCase() === tool.name.toLowerCase());
-  const licCatEl = document.getElementById("tool-modal-license-category");
-  const licActEl = document.getElementById("tool-modal-activation");
-  const licEvEl = document.getElementById("tool-modal-evidence-source");
-  const licMetEl = document.getElementById("tool-modal-verification-method");
+  // Step 1: Open modal immediately for instant visual feedback
+  modal.classList.add("active");
 
-  if (licRecord) {
-    if (licCatEl) licCatEl.textContent = toCryptic(licRecord.license_category) || "Cryptic";
-    if (licActEl) licActEl.textContent = toCryptic(licRecord.activation_status) || "Activation Data Unavailable";
-    if (licEvEl) licEvEl.textContent = toCryptic(licRecord.evidence_source) || "Cryptic or inconclusive";
-    if (licMetEl) licMetEl.textContent = toCryptic(licRecord.verification_method) || "Inconclusive Heuristic";
+  // Step 2: Show loading state & hide errors
+  if (errorEl) errorEl.style.display = "none";
+  if (loadingEl) loadingEl.style.display = "block";
+  if (contentEl) contentEl.style.opacity = "0.35";
+
+  // Pre-populate with cached basic data to avoid blank flash
+  const allCached = [
+    ...(state.toolsData?.curated_tools || []),
+    ...(state.dashboardData?.curated_tools || []),
+    ...(state.toolsData?.all_registry_software || [])
+  ];
+  const cachedTool = allCached.find(t => (t.id && t.id.toLowerCase() === toolId.toLowerCase()) || (t.name && t.name.toLowerCase() === toolId.toLowerCase()));
+  if (cachedTool) {
+    if (titleEl) titleEl.textContent = cachedTool.name;
+    if (iconEl) iconEl.innerHTML = getIcon(cachedTool.icon || 'package', 20);
+    if (subEl) subEl.textContent = `${cachedTool.id || toolId} • ${cachedTool.category || 'Software'}`;
+    if (badgeEl) {
+      badgeEl.className = `badge ${cachedTool.installed ? 'badge-healthy' : 'badge-cryptic'}`;
+      badgeEl.textContent = cachedTool.installed ? 'Installed' : 'Not Installed';
+    }
   } else {
-    if (licCatEl) licCatEl.textContent = "Cryptic (Audit Pending)";
-    if (licActEl) licActEl.textContent = "Activation Data Unavailable";
-    if (licEvEl) licEvEl.textContent = "Cryptic or inconclusive evidence";
-    if (licMetEl) licMetEl.textContent = "Inconclusive Heuristic";
+    if (titleEl) titleEl.textContent = toolId;
+    if (iconEl) iconEl.innerHTML = getIcon('package', 20);
+    if (subEl) subEl.textContent = "Resolving application telemetry...";
+    if (badgeEl) {
+      badgeEl.className = "badge badge-cryptic";
+      badgeEl.textContent = "Querying...";
+    }
   }
 
+  // Step 3: Fetch verified details from backend API
+  try {
+    const details = await api.call("get_software_details", toolId);
+    if (!details || details.status === "error") {
+      throw new Error(details?.message || `Application details for '${toolId}' could not be resolved.`);
+    }
 
-  const modal = document.getElementById("tool-detail-modal");
-  if (modal) modal.classList.add("active");
+    // Success: hide loading, show content
+    if (loadingEl) loadingEl.style.display = "none";
+    if (contentEl) {
+      contentEl.style.display = "flex";
+      contentEl.style.opacity = "1";
+    }
+
+    // Header & Badge
+    if (titleEl) titleEl.textContent = details.name || toolId;
+    if (iconEl) iconEl.innerHTML = getIcon(details.icon || 'package', 20);
+    if (subEl) subEl.textContent = `${details.id || toolId} • ${details.category || 'Software'}`;
+
+    if (badgeEl) {
+      if (details.installed) {
+        badgeEl.className = "badge badge-healthy";
+        badgeEl.textContent = "Installed";
+      } else if (details.status === "Partially Detected") {
+        badgeEl.className = "badge badge-warning";
+        badgeEl.textContent = "Partially Detected";
+      } else {
+        badgeEl.className = "badge badge-cryptic";
+        badgeEl.textContent = "Not Installed";
+      }
+    }
+
+    // Primary Metadata Fields
+    const verEl = document.getElementById("tool-modal-version");
+    if (verEl) verEl.textContent = details.version || (details.installed ? "Installed" : "Not Available");
+
+    const catEl = document.getElementById("tool-modal-category");
+    if (catEl) catEl.textContent = details.category || "General Application";
+
+    const pubEl = document.getElementById("tool-modal-publisher");
+    if (pubEl) pubEl.textContent = details.publisher || "Unknown / Community";
+
+    const srcEl = document.getElementById("tool-modal-source");
+    if (srcEl) srcEl.textContent = details.package_manager_or_source || details.source || "Windows Registry";
+
+    // Executable and Install Location
+    const exeEl = document.getElementById("tool-modal-exe");
+    if (exeEl) exeEl.textContent = details.exe_path || "Not Detected / Unavailable";
+
+    const pathEl = document.getElementById("tool-modal-path");
+    if (pathEl) pathEl.textContent = details.install_location || "Not Available";
+
+    // Executable Binaries Discovered
+    const exesBox = document.getElementById("tool-modal-executables-box");
+    const exesEl = document.getElementById("tool-modal-executables");
+    if (exesEl) {
+      if (details.detected_executables && details.detected_executables.length > 0) {
+        if (exesBox) exesBox.style.display = "block";
+        exesEl.innerHTML = details.detected_executables.map(e => `
+          <span class="code-badge" title="${escapeHtml(e)}">${escapeHtml(e)}</span>
+        `).join("");
+      } else {
+        exesEl.innerHTML = `<span style="font-size: 11.5px; color: var(--text-muted);">${details.installed ? 'Primary executable only' : 'None detected (Application not installed on this system)'}</span>`;
+      }
+    }
+
+    // Environment Variables & PATH
+    const envBox = document.getElementById("tool-modal-env-box");
+    const envEl = document.getElementById("tool-modal-env-vars");
+    if (envEl) {
+      if (details.environment_variables && details.environment_variables.length > 0) {
+        if (envBox) envBox.style.display = "block";
+        envEl.innerHTML = details.environment_variables.map(e => `
+          <div style="margin-bottom: 4px; word-break: break-all;">
+            <strong style="color: var(--accent-primary);">${escapeHtml(e.name)}:</strong>
+            <span style="color: var(--text-primary); margin-left: 4px;">${escapeHtml(e.value)}</span>
+          </div>
+        `).join("");
+      } else {
+        envEl.innerHTML = `<span style="font-size: 11.5px; color: var(--text-muted);">No tool-specific environment variables or distinct PATH entries found</span>`;
+      }
+    }
+
+    // Detection Method & Timestamp
+    const detEl = document.getElementById("tool-modal-detection-method");
+    if (detEl) detEl.textContent = details.detection_method || "Detected via SYSFIX Software Discovery Engine.";
+
+    const timeEl = document.getElementById("tool-modal-verified-time");
+    if (timeEl) timeEl.textContent = `Verified: ${details.last_verified || new Date().toLocaleString()}`;
+
+    // Diagnostics & Licensing
+    const diag = details.diagnostic_info || {};
+    const archEl = document.getElementById("tool-modal-arch");
+    if (archEl) archEl.textContent = diag.architecture || (details.installed ? "64-bit (x64)" : "N/A");
+
+    const sizeEl = document.getElementById("tool-modal-filesize");
+    if (sizeEl) {
+      if (diag.file_size_formatted && diag.file_size_formatted !== "Not Available") {
+        sizeEl.textContent = `${diag.file_size_formatted}${diag.modified_time && diag.modified_time !== 'Not Available' ? ' • ' + diag.modified_time : ''}`;
+      } else {
+        sizeEl.textContent = details.installed ? "Verified Binary" : "N/A";
+      }
+    }
+
+    const licFileEl = document.getElementById("tool-modal-license-file");
+    if (licFileEl) licFileEl.textContent = details.license_file || diag.license_file || (details.installed ? "None Detected in Install Directory" : "N/A");
+
+    // License Audit classification
+    const licRec = diag.license_record || state.licenseData?.records?.find(r => r.name.toLowerCase() === (details.name || '').toLowerCase());
+    const licCatEl = document.getElementById("tool-modal-license-category");
+    const licActEl = document.getElementById("tool-modal-activation");
+    const licEvEl = document.getElementById("tool-modal-evidence-source");
+    const licMetEl = document.getElementById("tool-modal-verification-method");
+
+    if (licRec) {
+      if (licCatEl) licCatEl.textContent = toCryptic(licRec.license_category) || "Commercial / Open Source";
+      if (licActEl) licActEl.textContent = toCryptic(licRec.activation_status) || (details.installed ? "Operational" : "Not Installed");
+      if (licEvEl) licEvEl.textContent = toCryptic(licRec.evidence_source) || (details.installed ? "Binary / Directory Inspection" : "Inventory Scanner");
+      if (licMetEl) licMetEl.textContent = toCryptic(licRec.verification_method) || details.detection_method || "Native Heuristic Inspection";
+    } else {
+      if (licCatEl) licCatEl.textContent = details.installed ? "Audited / Verified" : "N/A";
+      if (licActEl) licActEl.textContent = details.installed ? "Operational" : "Not Installed";
+      if (licEvEl) licEvEl.textContent = details.installed ? "Binary / Directory Inspection" : "System PATH Probe";
+      if (licMetEl) licMetEl.textContent = details.detection_method || "Native Heuristic Inspection";
+    }
+
+  } catch (err) {
+    if (loadingEl) loadingEl.style.display = "none";
+    if (contentEl) contentEl.style.display = "none";
+    if (errorEl) {
+      errorEl.style.display = "block";
+      if (errorMsgEl) errorMsgEl.textContent = err.message || "Failed to retrieve application details from the diagnostic backend.";
+      if (retryBtn) {
+        retryBtn.onclick = () => openToolDetailModal(toolId);
+      }
+    }
+  }
 }
 
 function closeToolDetailModal() {

@@ -44,6 +44,24 @@ def test_flask_routes(flask_test_client):
     res_settings = flask_test_client.get("/api/settings")
     assert res_settings.status_code == 200
 
+    # Test software details routes
+    res_sw_py = flask_test_client.get("/api/software/python")
+    assert res_sw_py.status_code == 200
+    assert res_sw_py.get_json()["name"] == "Python"
+    assert res_sw_py.get_json()["status"] == "Installed"
+
+    res_sw_rust = flask_test_client.get("/api/software/rust")
+    assert res_sw_rust.status_code == 200
+    assert res_sw_rust.get_json()["status"] == "Not Installed"
+
+    res_sw_404 = flask_test_client.get("/api/software/non_existent_software_xyz")
+    assert res_sw_404.status_code == 404
+
+    # Test query param endpoint
+    res_sw_query = flask_test_client.get("/api/software?id=python")
+    assert res_sw_query.status_code == 200
+    assert res_sw_query.get_json()["name"] == "Python"
+
 def test_api_license_audit(api_client):
     audit = api_client.get_license_audit()
     assert "records" in audit

@@ -47,7 +47,11 @@ from backend.core.scheduler import (
 )
 
 from backend.monitor import global_monitor
-from backend.core.software import get_installed_software_inventory, get_fast_curated_tools
+from backend.core.software import (
+    get_installed_software_inventory,
+    get_fast_curated_tools,
+    get_application_details
+)
 from backend.core.startup import get_startup_status, set_startup_status
 from backend.core.license_audit import (
     generate_full_license_audit, export_audit_to_csv, export_audit_to_html,
@@ -99,6 +103,7 @@ from backend.core.file_search import (
     open_folder_in_explorer, get_search_history, clear_search_history
 )
 from backend.core.notifications import dispatch_desktop_toast, get_notification_history, clear_notification_history
+from backend.core.window_mirror import get_open_windows, capture_window_frame
 
 # Cached software inventory to avoid scanning registry on every click
 _cached_software = None
@@ -237,6 +242,17 @@ class SYSFIXApi:
         _cached_software = get_installed_software_inventory()
         _cached_license_audit = None
         return _cached_software
+
+    def get_software_details(self, software_id: str) -> Dict[str, Any]:
+        """Retrieve verified application details and diagnostic telemetry."""
+        details = get_application_details(software_id)
+        if not details:
+            return {
+                "status": "error",
+                "error": "Application not found",
+                "message": f"Application '{software_id}' was not found in the current system inventory."
+            }
+        return details
 
     def get_license_audit(self) -> Dict[str, Any]:
         global _cached_software, _cached_license_audit
@@ -808,6 +824,15 @@ class SYSFIXApi:
     def clear_desktop_notification_history(self) -> Dict[str, Any]:
         return clear_notification_history()
 
+    # 2. Live Window Mirror
+    def get_window_mirror_list(self) -> List[Dict[str, Any]]:
+        """Enumerate active desktop windows eligible for mirroring."""
+        return get_open_windows()
+
+    def capture_window_mirror_frame(self, hwnd: int, max_width: int = 800, quality: int = 70) -> Dict[str, Any]:
+        """Capture live frame of the specified window handle."""
+        return capture_window_frame(hwnd, max_width, quality)
+
     # Windows Startup Management
     def get_windows_startup_status(self) -> Dict[str, Any]:
         """Check whether TERMINAL BOARD is configured for user sign-in launch."""
@@ -1025,6 +1050,23 @@ def create_flask_app(frontend_dir: Optional[str] = None) -> Flask:
     @app.route("/api/tools/refresh", methods=["POST"])
     def route_tools_refresh():
         return jsonify(api.refresh_installed_tools())
+
+    @app.route("/api/software/<path:software_id>", methods=["GET"])
+    def route_software_details(software_id):
+        res = api.get_software_details(software_id)
+        if not res or res.get("status") == "error":
+            return jsonify(res or {"status": "error", "message": "Application not found"}), 404
+        return jsonify(res)
+
+    @app.route("/api/software", methods=["GET"])
+    def route_software_details_query():
+        software_id = request.args.get("id") or request.args.get("name")
+        if not software_id:
+            return jsonify({"status": "error", "message": "Missing software identifier parameter"}), 400
+        res = api.get_software_details(software_id)
+        if not res or res.get("status") == "error":
+            return jsonify(res or {"status": "error", "message": "Application not found"}), 404
+        return jsonify(res)
 
     @app.route("/api/license-audit", methods=["GET"])
     def route_license_audit():
@@ -1267,6 +1309,20 @@ def create_flask_app(frontend_dir: Optional[str] = None) -> Flask:
     @app.route("/api/hardware/compatibility", methods=["GET"])
     def route_hardware_compatibility():
         return jsonify(api.get_hardware_compatibility_matrix())
+
+    # Window Mirror Routes
+    @app.route("/api/window-mirror/list", methods=["GET"])
+    def route_window_mirror_list():
+        return jsonify(api.get_window_mirror_list())
+
+    @app.route("/api/window-mirror/frame", methods=["GET"])
+    def route_window_mirror_frame():
+        hwnd = request.args.get("hwnd", type=int)
+        if not hwnd:
+            return jsonify({"success": False, "error": "Missing hwnd parameter"}), 400
+        max_w = request.args.get("max_width", default=800, type=int)
+        quality = request.args.get("quality", default=70, type=int)
+        return jsonify(api.capture_window_mirror_frame(hwnd, max_w, quality))
 
     return app
 

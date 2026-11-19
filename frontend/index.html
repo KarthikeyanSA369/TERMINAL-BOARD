@@ -1162,60 +1162,123 @@
 
   <!-- 1. Tool Detail Modal -->
   <div id="tool-detail-modal" class="modal-overlay">
-    <div class="modal-box">
+    <div class="modal-box tool-modal-box">
       <div class="modal-header">
-        <h3 id="tool-modal-title" style="font-size: 16px; font-weight: 700; color: var(--text-primary);">Tool Details</h3>
-        <button class="icon-btn" onclick="closeToolDetailModal()" style="width: 28px; height: 28px;">✕</button>
-      </div>
-      <div class="modal-body">
-        <div>
-          <span style="font-size: 11px; color: var(--text-secondary);">Installed Version</span>
-          <div id="tool-modal-version" style="font-weight: 600; font-size: 14px; margin-top: 2px;">--</div>
-        </div>
-        <div>
-          <span style="font-size: 11px; color: var(--text-secondary);">Publisher / Vendor</span>
-          <div id="tool-modal-publisher" style="font-weight: 600; font-size: 14px; margin-top: 2px;">--</div>
-        </div>
-        <div>
-          <span style="font-size: 11px; color: var(--text-secondary);">Category</span>
-          <div id="tool-modal-category" style="font-weight: 500; font-size: 13px; margin-top: 2px;">--</div>
-        </div>
-        <div>
-          <span style="font-size: 11px; color: var(--text-secondary);">Installation Path</span>
-          <div id="tool-modal-path" style="font-size: 12px; font-family: monospace; background: var(--bg-surface); padding: 6px 10px; border-radius: 6px; margin-top: 2px; word-break: break-all;">--</div>
-        </div>
-        <div>
-          <span style="font-size: 11px; color: var(--text-secondary);">Executable Binary Location</span>
-          <div id="tool-modal-exe" style="font-size: 12px; font-family: monospace; background: var(--bg-surface); padding: 6px 10px; border-radius: 6px; margin-top: 2px; word-break: break-all;">--</div>
-        </div>
-        <div>
-          <span style="font-size: 11px; color: var(--text-secondary);">Discovered License File</span>
-          <div id="tool-modal-license-file" style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">--</div>
-        </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: var(--bg-surface); padding: 10px 12px; border-radius: 8px;">
-          <div>
-            <span style="font-size: 11px; color: var(--text-secondary);">License Category</span>
-            <div id="tool-modal-license-category" style="font-weight: 600; font-size: 12px; color: var(--accent-primary); margin-top: 2px;">--</div>
-          </div>
-          <div>
-            <span style="font-size: 11px; color: var(--text-secondary);">Activation Status</span>
-            <div id="tool-modal-activation" style="font-weight: 600; font-size: 12px; color: var(--text-primary); margin-top: 2px;">--</div>
-          </div>
-          <div>
-            <span style="font-size: 11px; color: var(--text-secondary);">Evidence Source</span>
-            <div id="tool-modal-evidence-source" style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">--</div>
-          </div>
-          <div>
-            <span style="font-size: 11px; color: var(--text-secondary);">Verification Method</span>
-            <div id="tool-modal-verification-method" style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">--</div>
+        <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+          <div id="tool-modal-icon" style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: var(--radius-sm); background: var(--bg-surface); color: var(--accent-primary); flex-shrink: 0;"></div>
+          <div style="min-width: 0;">
+            <h3 id="tool-modal-title" style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Tool Details</h3>
+            <span id="tool-modal-id-subtitle" style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 1px;">Application Metadata &amp; Diagnostics</span>
           </div>
         </div>
-        <div>
-          <span style="font-size: 11px; color: var(--text-secondary);">Metadata Source</span>
-          <div id="tool-modal-source" style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">--</div>
+        <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
+          <span id="tool-modal-status-badge" class="badge">--</span>
+          <button class="icon-btn" onclick="closeToolDetailModal()" style="width: 28px; height: 28px;" title="Close (Esc)">✕</button>
         </div>
       </div>
-      <div class="modal-footer">
+      <div class="modal-body" id="tool-modal-body" style="display: flex; flex-direction: column; gap: 14px; max-height: 72vh; overflow-y: auto;">
+        <!-- Loading State -->
+        <div id="tool-modal-loading" style="display: none; padding: 28px 16px; text-align: center; color: var(--text-secondary);">
+          <div class="spinner" style="margin: 0 auto 12px; width: 28px; height: 28px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--accent-primary); border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+          <span style="font-size: 13px;">Querying verified application metadata &amp; diagnostic engine...</span>
+        </div>
+
+        <!-- Error State -->
+        <div id="tool-modal-error" style="display: none; background: rgba(255,100,124,0.1); border: 1px solid var(--status-critical); border-radius: var(--radius-md); padding: 16px; text-align: center;">
+          <div style="color: var(--status-critical); font-weight: 600; font-size: 13.5px; margin-bottom: 6px;">Failed to Retrieve Application Details</div>
+          <div id="tool-modal-error-msg" style="color: var(--text-secondary); font-size: 12px; margin-bottom: 12px; line-height: 1.4;">The application details could not be loaded.</div>
+          <button class="btn btn-primary" id="tool-modal-retry-btn" style="padding: 6px 14px; font-size: 12px;">Retry</button>
+        </div>
+
+        <!-- Content Details Container -->
+        <div id="tool-modal-content" style="display: flex; flex-direction: column; gap: 14px;">
+          <!-- Top Grid: Version, Category, Publisher, Source -->
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; background: var(--bg-surface); padding: 12px 14px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+            <div>
+              <span style="font-size: 11px; color: var(--text-secondary);">Verified Version</span>
+              <div id="tool-modal-version" style="font-weight: 600; font-size: 13.5px; margin-top: 2px; color: var(--text-primary); word-break: break-word;">--</div>
+            </div>
+            <div>
+              <span style="font-size: 11px; color: var(--text-secondary);">Application Category</span>
+              <div id="tool-modal-category" style="font-weight: 500; font-size: 13px; margin-top: 2px; color: var(--text-primary);">--</div>
+            </div>
+            <div>
+              <span style="font-size: 11px; color: var(--text-secondary);">Publisher / Vendor</span>
+              <div id="tool-modal-publisher" style="font-weight: 600; font-size: 13px; margin-top: 2px; color: var(--text-primary); word-break: break-word;">--</div>
+            </div>
+            <div>
+              <span style="font-size: 11px; color: var(--text-secondary);">Installation Source</span>
+              <div id="tool-modal-source" style="font-size: 12px; font-weight: 500; color: var(--text-primary); margin-top: 2px; word-break: break-word;">--</div>
+            </div>
+          </div>
+
+          <!-- Executable & Directory Paths -->
+          <div>
+            <span style="font-size: 11px; color: var(--text-secondary);">Executable Binary Location</span>
+            <div id="tool-modal-exe" style="font-size: 12px; font-family: monospace; background: var(--bg-surface); padding: 8px 12px; border-radius: var(--radius-sm); margin-top: 4px; word-break: break-all; border: 1px solid var(--border-subtle); max-height: 80px; overflow-y: auto;">--</div>
+          </div>
+
+          <div>
+            <span style="font-size: 11px; color: var(--text-secondary);">Installation Directory</span>
+            <div id="tool-modal-path" style="font-size: 12px; font-family: monospace; background: var(--bg-surface); padding: 8px 12px; border-radius: var(--radius-sm); margin-top: 4px; word-break: break-all; border: 1px solid var(--border-subtle); max-height: 80px; overflow-y: auto;">--</div>
+          </div>
+
+          <!-- Detected Executables (if multiple / discovered) -->
+          <div id="tool-modal-executables-box">
+            <span style="font-size: 11px; color: var(--text-secondary);">Detected Executable Files</span>
+            <div id="tool-modal-executables" style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px;">--</div>
+          </div>
+
+          <!-- Relevant Environment Variables / PATH entries -->
+          <div id="tool-modal-env-box">
+            <span style="font-size: 11px; color: var(--text-secondary);">Relevant Environment Variables &amp; PATH Entries</span>
+            <div id="tool-modal-env-vars" style="font-size: 11.5px; font-family: monospace; background: var(--bg-surface); padding: 8px 12px; border-radius: var(--radius-sm); margin-top: 4px; border: 1px solid var(--border-subtle); max-height: 110px; overflow-y: auto;">--</div>
+          </div>
+
+          <!-- Detection Method & Last Verification Time -->
+          <div style="background: var(--bg-surface); padding: 10px 14px; border-radius: var(--radius-md); border-left: 3px solid var(--accent-primary); border-top: 1px solid var(--border-subtle); border-right: 1px solid var(--border-subtle); border-bottom: 1px solid var(--border-subtle);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <span style="font-size: 11px; font-weight: 600; color: var(--text-secondary);">Detection &amp; Verification Method</span>
+              <span id="tool-modal-verified-time" style="font-size: 10.5px; color: var(--text-muted);">Verified: --</span>
+            </div>
+            <div id="tool-modal-detection-method" style="font-size: 12px; color: var(--text-primary); line-height: 1.45;">--</div>
+          </div>
+
+          <!-- Diagnostics & Licensing Grid -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: var(--bg-surface); padding: 12px 14px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+            <div>
+              <span style="font-size: 11px; color: var(--text-secondary);">Binary Architecture</span>
+              <div id="tool-modal-arch" style="font-weight: 600; font-size: 12px; color: var(--text-primary); margin-top: 2px;">--</div>
+            </div>
+            <div>
+              <span style="font-size: 11px; color: var(--text-secondary);">File Size / Modified</span>
+              <div id="tool-modal-filesize" style="font-size: 12px; color: var(--text-primary); margin-top: 2px;">--</div>
+            </div>
+            <div>
+              <span style="font-size: 11px; color: var(--text-secondary);">License File</span>
+              <div id="tool-modal-license-file" style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px; word-break: break-all;">--</div>
+            </div>
+            <div>
+              <span style="font-size: 11px; color: var(--text-secondary);">License Category</span>
+              <div id="tool-modal-license-category" style="font-weight: 600; font-size: 12px; color: var(--accent-primary); margin-top: 2px;">--</div>
+            </div>
+            <div>
+              <span style="font-size: 11px; color: var(--text-secondary);">Activation Status</span>
+              <div id="tool-modal-activation" style="font-weight: 600; font-size: 12px; color: var(--text-primary); margin-top: 2px;">--</div>
+            </div>
+            <div>
+              <span style="font-size: 11px; color: var(--text-secondary);">Evidence Source</span>
+              <div id="tool-modal-evidence-source" style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">--</div>
+            </div>
+            <div style="grid-column: span 2;">
+              <span style="font-size: 11px; color: var(--text-secondary);">License Verification Method</span>
+              <div id="tool-modal-verification-method" style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">--</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+        <span id="tool-modal-footer-info" style="font-size: 11px; color: var(--text-muted);">Verified Read-only System Diagnostics</span>
         <button class="btn" onclick="closeToolDetailModal()">Close</button>
       </div>
     </div>

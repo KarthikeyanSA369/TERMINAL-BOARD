@@ -703,6 +703,26 @@ body.light-mode .sidebar {
   transform: translateY(-2px);
   box-shadow: var(--shadow-raised);
 }
+.tool-card:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+  border-color: var(--accent-primary);
+}
+.tool-card:active {
+  transform: translateY(0);
+}
+.tool-card:hover .tool-card-link {
+  color: var(--accent-secondary, #38BDF8) !important;
+  text-decoration: underline;
+}
+.tool-card.tool-uninstalled {
+  opacity: 0.85;
+  border-style: dashed;
+}
+.tool-card.tool-uninstalled:hover {
+  opacity: 1;
+  border-style: solid;
+}
 .tool-card.active-selected {
   border-color: var(--accent-primary);
   box-shadow: var(--shadow-inset);
@@ -877,6 +897,28 @@ code {
 @keyframes modalScale {
   from { opacity: 0; transform: scale(0.95); }
   to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.tool-modal-box {
+  width: 92%;
+  max-width: 680px;
+  max-height: 88vh;
+}
+
+.code-badge {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 3px 8px;
+  font-family: monospace;
+  font-size: 11px;
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
 }
 
 .modal-header {

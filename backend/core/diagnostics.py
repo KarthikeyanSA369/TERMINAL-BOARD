@@ -10,7 +10,7 @@ import os
 import shutil
 import tempfile
 import subprocess
-import psutil
+import backend.core.safe_psutil as psutil
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 from backend.core.metrics import format_bytes

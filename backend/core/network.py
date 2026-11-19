@@ -14,7 +14,7 @@ import socket
 import subprocess
 import time
 import re
-import psutil
+import backend.core.safe_psutil as psutil
 from typing import Dict, Any, List, Optional
 
 def check_dns_resolution(host: str = "cloudflare.com") -> Dict[str, Any]:

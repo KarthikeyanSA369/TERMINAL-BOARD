@@ -19,7 +19,7 @@ import sys
 import os
 import time
 import socket
-import psutil
+import backend.core.safe_psutil as psutil
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Dict, Any, List, Optional, Tuple
@@ -260,12 +260,31 @@ def get_storage_inventory() -> Dict[str, Any]:
 
     # Logical partitions via psutil
     try:
+        import ctypes
+        def _get_vol_label(mp: str) -> str:
+            if sys.platform != "win32":
+                return ""
+            try:
+                buf = ctypes.create_unicode_buffer(1024)
+                fs = ctypes.create_unicode_buffer(1024)
+                p = mp if mp.endswith("\\") else mp + "\\"
+                if ctypes.windll.kernel32.GetVolumeInformationW(ctypes.c_wchar_p(p), buf, ctypes.sizeof(buf), None, None, None, fs, ctypes.sizeof(fs)):
+                    return buf.value
+            except Exception:
+                pass
+            return ""
+
         for part in psutil.disk_partitions(all=False):
             try:
                 usage = psutil.disk_usage(part.mountpoint)
+                lbl = _get_vol_label(part.mountpoint)
+                dl = part.mountpoint.rstrip("\\")
                 storage_data["logical_partitions"].append({
                     "device": part.device,
                     "mountpoint": part.mountpoint,
+                    "drive_letter": dl,
+                    "label": lbl,
+                    "display_name": f"{dl} ({lbl})" if lbl else dl,
                     "filesystem": part.fstype,
                     "total_bytes": usage.total,
                     "total_formatted": format_bytes(usage.total),
@@ -274,7 +293,8 @@ def get_storage_inventory() -> Dict[str, Any]:
                     "used_bytes": usage.used,
                     "used_formatted": format_bytes(usage.used),
                     "percent_used": usage.percent,
-                    "percent_free": round(100.0 - usage.percent, 1)
+                    "percent_free": round(100.0 - usage.percent, 1),
+                    "summary_line": f"{dl} ({lbl}) — {format_bytes(usage.total)} total | {format_bytes(usage.free)} free | {usage.percent}% used" if lbl else f"{dl} — {format_bytes(usage.total)} total | {format_bytes(usage.free)} free | {usage.percent}% used"
                 })
             except Exception:
                 continue

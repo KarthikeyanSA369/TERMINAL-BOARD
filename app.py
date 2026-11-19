@@ -144,6 +144,11 @@ def main():
     parser.add_argument("--export-report", type=str, choices=["json", "txt", "html", "all"], default="all", help="Export hardware diagnostic report format (default: all)")
     args = parser.parse_args()
 
+    is_winpe = os.path.exists(r"X:\Windows") or os.environ.get("SystemDrive", "").upper().strip() == "X:"
+    if is_winpe and not args.web and not args.headless:
+        # Pre-boot WinPE operates in a pure console shell; default to hardware diagnostic scan
+        args.hardware_scan = True
+
     # 1. Initialize SQLite Database
     logger.info("Initializing SQLite database...")
     init_db()

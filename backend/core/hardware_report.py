@@ -18,16 +18,51 @@ from typing import Dict, Any, List, Optional
 
 
 def get_default_reports_dir() -> str:
-    """Returns local project reports directory."""
+    """Returns local project reports directory with automatic persistence detection in WinPE."""
     import sys
+    is_winpe = os.path.exists(r"X:\Windows") or os.environ.get("SystemDrive", "").upper().strip() == "X:"
+    
+    if is_winpe:
+        # WinPE: Search for persistent writable storage (USB / local HDD / SSD)
+        try:
+            import ctypes
+            kernel32 = ctypes.windll.kernel32
+            for letter in ['D', 'E', 'F', 'G', 'C', 'H', 'U', 'Y']:
+                candidate_drive = f"{letter}:\\"
+                dtype = kernel32.GetDriveTypeW(candidate_drive)
+                if dtype in (2, 3):  # DRIVE_REMOVABLE or DRIVE_FIXED
+                    target_dir = os.path.join(f"{letter}:\\", "SYSFIX_Reports")
+                    try:
+                        os.makedirs(target_dir, exist_ok=True)
+                        test_file = os.path.join(target_dir, ".write_test")
+                        with open(test_file, "w") as f:
+                            f.write("ok")
+                        os.remove(test_file)
+                        return target_dir
+                    except Exception:
+                        continue
+        except Exception:
+            pass
+
     if getattr(sys, "frozen", False):
-        # In PyInstaller frozen bundle, save reports adjacent to the running executable
+        # In PyInstaller frozen bundle, save reports adjacent to the running executable if writable
         base_dir = os.path.dirname(sys.executable)
     else:
         base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     reports_dir = os.path.join(base_dir, "reports")
-    os.makedirs(reports_dir, exist_ok=True)
-    return reports_dir
+    try:
+        os.makedirs(reports_dir, exist_ok=True)
+        test_file = os.path.join(reports_dir, ".write_test")
+        with open(test_file, "w") as f:
+            f.write("ok")
+        os.remove(test_file)
+        return reports_dir
+    except Exception:
+        # Fallback to local %TEMP%\SYSFIX\reports if base_dir is read-only (e.g. CD-ROM / ISO optical drive)
+        import tempfile
+        temp_reports = os.path.join(tempfile.gettempdir(), "SYSFIX", "reports")
+        os.makedirs(temp_reports, exist_ok=True)
+        return temp_reports
 
 
 def build_full_report_model(
