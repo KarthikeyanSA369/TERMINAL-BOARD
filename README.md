@@ -1,4 +1,5 @@
 
+<img width="1536" height="1024" alt="Terminal Board" src="https://github.com/user-attachments/assets/8f6912f4-7470-47c6-a2e8-0d938595b144" />
 # TERMINAL BOARD
 ### One Center. Every Control.
 
